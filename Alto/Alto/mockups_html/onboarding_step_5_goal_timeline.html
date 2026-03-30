@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto Onboarding - Goal & Timeline</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { min-height: 100dvh; background:#221910; color:#ececf0; font-family: "Space Grotesk", ui-sans-serif, system-ui; }
+  </style>
+</head>
+<body class="max-w-md mx-auto px-5 py-6">
+  <div class="space-y-5">
+    <div class="flex gap-2">
+      <div class="h-1.5 flex-1 rounded-full bg-[#f48c25]"></div>
+      <div class="h-1.5 flex-1 rounded-full bg-[#f48c25]"></div>
+      <div class="h-1.5 flex-1 rounded-full bg-[#f48c25]"></div>
+      <div class="h-1.5 flex-1 rounded-full bg-[#f48c25]"></div>
+      <div class="h-1.5 flex-1 rounded-full bg-[#f48c25]"></div>
+      <div class="h-1.5 flex-1 rounded-full bg-[#5a3b22]"></div>
+    </div>
+
+    <h1 class="text-4xl font-extrabold leading-tight">Step 5: Goal & Timeline</h1>
+    <p class="text-[#8f93a3]">Set your north-star goal and when you want to complete it.</p>
+
+    <div class="rounded-xl border border-[#5a3b22] bg-[#2a1d12] p-4 space-y-2">
+      <label class="text-xs font-bold tracking-widest text-[#f48c25]">GOAL</label>
+      <input class="w-full rounded-lg bg-[#1f140c] border border-[#5a3b22] px-4 py-3 outline-none" value="Hyrox" placeholder="Example: Hyrox" />
+    </div>
+
+    <div class="rounded-xl border border-[#5a3b22] bg-[#2a1d12] p-4 space-y-3">
+      <label class="text-xs font-bold tracking-widest text-[#f48c25]">TIMELINE</label>
+
+      <div class="flex items-center gap-2">
+        <select class="rounded-lg bg-[#1f140c] border border-[#5a3b22] px-4 py-3 w-28">
+          <option selected>4</option>
+          <option>5</option>
+          <option>6</option>
+        </select>
+
+        <select class="rounded-lg bg-[#1f140c] border border-[#5a3b22] px-4 py-3 flex-1">
+          <option>weeks</option>
+          <option selected>months</option>
+        </select>
+      </div>
+
+      <p class="text-sm text-[#8f93a3]">Example: <span class="text-[#ececf0] font-semibold">Hyrox in 4 months</span></p>
+    </div>
+
+    <button class="w-full rounded-xl bg-[#f48c25] text-[#1b130b] font-bold py-4 text-lg">Continue →</button>
+  </div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto Home Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #221910;
+      --card: #2a1d12;
+      --border: #5a3b22;
+      --primary: #f48c25;
+      --text: #ececf0;
+      --muted: #8f93a3;
+    }
+    body {
+      min-height: 100dvh;
+      background: radial-gradient(circle at top right, #3a2616 0%, var(--bg) 45%);
+      color: var(--text);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui;
+    }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
+    .chip { border: 1px solid var(--border); border-radius: 9999px; padding: 8px 12px; font-size: 12px; }
+    .chip.active { border-color: var(--primary); color: var(--primary); background: rgba(244,140,37,0.08); }
+  </style>
+</head>
+<body class="max-w-md mx-auto px-4 py-5 space-y-4">
+  <header class="card p-4 flex items-start justify-between gap-3">
+    <div class="space-y-1">
+      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Alto Home</p>
+      <h1 id="welcomeName" class="text-2xl font-extrabold leading-tight">Hi Komal 👋</h1>
+      <p class="text-sm text-[var(--muted)]">Let’s make today count. You are building momentum.</p>
+    </div>
+
+    <label class="relative cursor-pointer">
+      <input id="profileUpload" type="file" accept="image/*" class="hidden" />
+      <img id="profilePreview" src="https://via.placeholder.com/56x56.png?text=%F0%9F%91%A4" alt="Profile"
+           class="h-14 w-14 rounded-full object-cover border border-[var(--primary)]" />
+      <span class="absolute -bottom-1 -right-1 bg-[var(--primary)] text-[#1b130b] text-[10px] font-bold px-2 py-0.5 rounded-full">Edit</span>
+    </label>
+  </header>
+
+  <section class="card p-4 flex items-center justify-between">
+    <div>
+      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Apple Health</p>
+      <p class="text-sm text-[var(--muted)]">Connected · Last sync just now</p>
+    </div>
+    <span class="text-green-400 text-sm font-semibold">Connected</span>
+  </section>
+
+  <section class="card p-4 space-y-2">
+    <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Your Goal</p>
+    <h2 class="text-xl font-bold">July Marathon - Sub 4:15</h2>
+    <p class="text-sm text-[var(--muted)]">North Star locked. Daily training adapts to keep you on track.</p>
+  </section>
+
+  <section class="card p-4 space-y-3">
+    <div class="flex items-center justify-between">
+      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">How are you feeling today?</p>
+      <span id="moodText" class="text-xs text-[var(--muted)]">Selected: Balanced</span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 text-center">
+      <button class="chip mood active" data-mood="Ready to Push">Ready to Push</button>
+      <button class="chip mood" data-mood="Balanced">Balanced</button>
+      <button class="chip mood" data-mood="Low Energy">Low Energy</button>
+      <button class="chip mood" data-mood="Muscle Fatigue">Muscle Fatigue</button>
+      <button class="chip mood" data-mood="Mentally Drained">Mentally Drained</button>
+      <button class="chip mood" data-mood="Need Recovery">Need Recovery</button>
+    </div>
+  </section>
+
+  <section class="card p-4 space-y-2">
+    <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Today's Assigned Workout</p>
+    <h3 class="text-lg font-bold">Tempo Run · 45 mins</h3>
+    <p class="text-sm text-[var(--muted)]">Warm-up 10 min → 3 x 8 min tempo → cool-down 5 min.</p>
+    <button class="w-full mt-2 rounded-xl bg-[var(--primary)] text-[#1b130b] font-bold py-3">Start Workout</button>
+  </section>
+
+  <section class="card p-4 space-y-3">
+    <div class="flex items-center justify-between">
+      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Goal Phase Progress</p>
+      <span class="text-sm font-semibold">Build Phase</span>
+    </div>
+
+    <div class="h-3 w-full rounded-full bg-[#3a2a1d] overflow-hidden">
+      <div class="h-full bg-[var(--primary)]" style="width: 48%"></div>
+    </div>
+
+    <div class="grid grid-cols-4 text-[11px] text-[var(--muted)] font-semibold">
+      <span>Base</span>
+      <span class="text-[var(--primary)]">Build</span>
+      <span>Peak</span>
+      <span>Taper</span>
+    </div>
+
+    <p class="text-xs text-[var(--muted)]">You are 48% through your current roadmap phase.</p>
+  </section>
+
+  <script>
+    const moodButtons = document.querySelectorAll('.mood');
+    const moodText = document.getElementById('moodText');
+
+    moodButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        moodText.textContent = `Selected: ${btn.dataset.mood}`;
+      });
+    });
+
+    const profileUpload = document.getElementById('profileUpload');
+    const profilePreview = document.getElementById('profilePreview');
+
+    profileUpload.addEventListener('change', (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        profilePreview.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>
