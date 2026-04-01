@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto – Agentic Architecture</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0f0d0a;
+      --surface: #1a1108;
+      --card:    #231809;
+      --border:  #3a2810;
+      --primary: #f48c25;
+      --dim:     rgba(244,140,37,0.12);
+      --text:    #f0ede8;
+      --muted:   #7a7870;
+      --green:   #4ade80;
+      --blue:    #60a5fa;
+      --purple:  #a78bfa;
+      --red:     #f87171;
+      --green-dim:  rgba(74,222,128,0.1);
+      --blue-dim:   rgba(96,165,250,0.1);
+      --purple-dim: rgba(167,139,250,0.1);
+      --red-dim:    rgba(248,113,113,0.1);
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", system-ui;
+      -webkit-font-smoothing: antialiased;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── Header ── */
+    .page-title { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .page-sub   { font-size: 14px; color: var(--muted); margin-bottom: 40px; }
+
+    /* ── Section labels ── */
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--primary); margin-bottom: 14px;
+    }
+
+    /* ── Diagram container ── */
+    .diagram {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── Row ── */
+    .row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      position: relative;
+    }
+
+    /* ── Arrow connectors ── */
+    .arrow-down {
+      display: flex; justify-content: center; align-items: center;
+      height: 40px; color: var(--muted); font-size: 20px; position: relative;
+    }
+    .arrow-down::before {
+      content: ''; position: absolute; top: 0; left: 50%;
+      width: 2px; height: 100%; background: var(--border);
+      transform: translateX(-50%);
+    }
+    .arrow-down::after {
+      content: '▼'; position: absolute; bottom: 0;
+      font-size: 10px; color: var(--muted); background: var(--bg);
+      padding: 2px 4px;
+    }
+    .arrow-right {
+      display: flex; align-items: center; justify-content: center;
+      width: 36px; flex-shrink: 0; color: var(--muted); font-size: 10px;
+      position: relative;
+    }
+    .arrow-right::before {
+      content: ''; position: absolute;
+      width: 100%; height: 2px; background: var(--border);
+    }
+    .arrow-right::after { content: '▶'; position: relative; z-index: 1; background: var(--bg); padding: 0 2px; }
+
+    /* ── Box types ── */
+    .box {
+      border-radius: 14px;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      background: var(--card);
+    }
+    .box-title { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
+    .box-sub   { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .box-tag   {
+      display: inline-block; font-size: 9px; font-weight: 800;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      border-radius: 9999px; padding: 2px 8px; margin-bottom: 6px;
+    }
+
+    /* ── Trigger zone ── */
+    .trigger-box {
+      background: var(--green-dim); border-color: rgba(74,222,128,0.3);
+    }
+    .trigger-box .box-title { color: var(--green); }
+    .trigger-tag { background: rgba(74,222,128,0.15); color: var(--green); }
+
+    /* ── Claude agent ── */
+    .agent-wrap {
+      border: 2px solid var(--primary);
+      border-radius: 20px;
+      background: rgba(244,140,37,0.04);
+      padding: 20px;
+      position: relative;
+    }
+    .agent-badge {
+      position: absolute; top: -12px; left: 20px;
+      background: var(--primary); color: #1a1108;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+      padding: 3px 14px; border-radius: 9999px;
+    }
+    .agent-title { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .agent-sub   { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+    /* ── Reasoning steps ── */
+    .steps {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+    }
+    .step {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--dim); border: 1px solid rgba(244,140,37,0.3);
+      color: var(--primary); font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-body { flex: 1; }
+    .step-action { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .step-detail { font-size: 11px; color: var(--muted); }
+    .step-tool {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700;
+      background: var(--blue-dim); color: var(--blue);
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 9999px; padding: 2px 8px; margin-top: 4px;
+    }
+    .step-tool svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+    .step-decision {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700;
+      background: var(--purple-dim); color: var(--purple);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: 9999px; padding: 2px 8px; margin-top: 4px;
+    }
+
+    /* ── Tools grid ── */
+    .tools-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .tool-card {
+      background: var(--blue-dim); border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .tool-card-icon { font-size: 18px; margin-bottom: 5px; }
+    .tool-card-name { font-size: 11px; font-weight: 800; color: var(--blue); margin-bottom: 2px; }
+    .tool-card-desc { font-size: 10px; color: var(--muted); }
+
+    /* ── Decision branch ── */
+    .branch {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+      margin-top: 16px;
+    }
+    .branch-item {
+      border-radius: 12px; padding: 12px;
+      border: 1px solid; text-align: center;
+    }
+    .branch-icon { font-size: 22px; margin-bottom: 6px; }
+    .branch-title { font-size: 12px; font-weight: 800; margin-bottom: 3px; }
+    .branch-sub { font-size: 10px; color: var(--muted); }
+    .branch-green  { background: var(--green-dim);  border-color: rgba(74,222,128,0.3); }
+    .branch-green .branch-title { color: var(--green); }
+    .branch-yellow { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); }
+    .branch-yellow .branch-title { color: #fbbf24; }
+    .branch-red    { background: var(--red-dim);    border-color: rgba(248,113,113,0.3); }
+    .branch-red .branch-title { color: var(--red); }
+
+    /* ── Output ── */
+    .output-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    }
+    .output-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .output-card-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--primary); margin-bottom: 6px; }
+    .output-card-val   { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .output-card-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    /* ── Feedback loop ── */
+    .feedback-box {
+      background: var(--purple-dim); border-color: rgba(167,139,250,0.3);
+    }
+    .feedback-box .box-title { color: var(--purple); }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 32px 0; }
+
+    /* ── Legend ── */
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Data sources ── */
+    .sources-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    }
+    .source-card {
+      border-radius: 10px; padding: 10px 12px; border: 1px solid;
+      text-align: center;
+    }
+    .source-icon { font-size: 20px; margin-bottom: 5px; }
+    .source-name { font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+    .source-sub  { font-size: 10px; color: var(--muted); }
+
+    /* responsive */
+    @media (max-width: 640px) {
+      .tools-grid   { grid-template-columns: repeat(2, 1fr); }
+      .output-grid  { grid-template-columns: 1fr 1fr; }
+      .branch       { grid-template-columns: 1fr; }
+      .sources-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div style="max-width:900px;margin:0 auto;">
+
+  <p class="section-label">Alto · AI System Design</p>
+  <h1 class="page-title">Agentic Architecture</h1>
+  <p class="page-sub">How Claude reasons, uses tools, and generates your daily plan</p>
+
+  <div class="diagram">
+
+    <!-- ══════════════════════════════════
+         TRIGGER
+    ══════════════════════════════════ -->
+    <div class="section-label">1 — Trigger</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0;">
+
+      <div class="box trigger-box">
+        <span class="box-tag trigger-tag">Primary</span>
+        <div class="box-title">Daily Sentinel</div>
+        <div class="box-sub">User rates soreness · stress · motivation each morning. Fires the agent loop.</div>
+      </div>
+
+      <div class="box trigger-box">
+        <span class="box-tag trigger-tag">Secondary</span>
+        <div class="box-title">User Enters Plan</div>
+        <div class="box-sub">"I have Pilates at 9am and a 6 mile hike this afternoon." Agent validates + fills gaps.</div>
+      </div>
+
+      <div class="box trigger-box">
+        <span class="box-tag trigger-tag">Passive</span>
+        <div class="box-title">App Open / 6am Push</div>
+        <div class="box-sub">HealthKit data freshly synced. Agent re-evaluates overnight recovery signals.</div>
+      </div>
+
+    </div>
+
+    <div class="arrow-down" style="margin:0 auto;width:2px;height:44px;position:relative;">
+      <div style="position:absolute;top:0;left:50%;width:2px;height:100%;background:var(--border);transform:translateX(-50%);"></div>
+      <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 4px;">▼</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         DATA SOURCES
+    ══════════════════════════════════ -->
+    <div class="section-label">2 — Data Sources (Agent reads these via tools)</div>
+    <div class="sources-grid" style="margin-bottom:0;">
+
+      <div class="source-card" style="background:var(--green-dim);border-color:rgba(74,222,128,0.25);">
+        <div class="source-icon">❤️</div>
+        <div class="source-name" style="color:var(--green);">HealthKit</div>
+        <div class="source-sub">Sleep · HRV · Active energy · Resting HR</div>
+      </div>
+
+      <div class="source-card" style="background:var(--blue-dim);border-color:rgba(96,165,250,0.25);">
+        <div class="source-icon">⛅</div>
+        <div class="source-name" style="color:var(--blue);">WeatherKit</div>
+        <div class="source-sub">Temp · Rain prob · UV · 7-day forecast</div>
+      </div>
+
+      <div class="source-card" style="background:var(--purple-dim);border-color:rgba(167,139,250,0.25);">
+        <div class="source-icon">👤</div>
+        <div class="source-name" style="color:var(--purple);">User Profile</div>
+        <div class="source-sub">Goal · Phase · Conditions · Preferences</div>
+      </div>
+
+      <div class="source-card" style="background:var(--dim);border-color:rgba(244,140,37,0.25);">
+        <div class="source-icon">📋</div>
+        <div class="source-name" style="color:var(--primary);">Planned Events</div>
+        <div class="source-sub">Calendar bookings · User-entered workouts</div>
+      </div>
+
+      <div class="source-card" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.25);">
+        <div class="source-icon">📈</div>
+        <div class="source-name" style="color:#fbbf24;">Training History</div>
+        <div class="source-sub">Last 7 days · Volume · Effort gaps · Streaks</div>
+      </div>
+
+    </div>
+
+    <div style="width:2px;height:44px;background:var(--border);margin:0 auto;position:relative;">
+      <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 4px;">▼</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         CLAUDE AGENT
+    ══════════════════════════════════ -->
+    <div class="section-label">3 — Claude Agent Loop (claude-sonnet-4-6)</div>
+    <div class="agent-wrap">
+      <div class="agent-badge">CLAUDE SONNET 4.6</div>
+      <div class="agent-title">Alto Coaching Agent</div>
+      <div class="agent-sub">Reasons step-by-step. Calls tools. Stops when plan is complete and saved.</div>
+
+      <!-- Steps -->
+      <div class="steps">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-action">Read recovery signals</div>
+            <div class="step-detail">Fetch sleep, HRV, active energy from HealthKit. Compute readiness score.</div>
+            <span class="step-tool"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>fetch_healthkit()</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-action">Check environment</div>
+            <div class="step-detail">Fetch weather forecast. Flag rain, heat, or extreme conditions.</div>
+            <span class="step-tool"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>fetch_weather()</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-action">Load user context</div>
+            <div class="step-detail">Goal, training phase, health conditions, preferences, cycle phase.</div>
+            <span class="step-tool"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>get_user_profile()</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <div class="step-action">Check what's already planned</div>
+            <div class="step-detail">User said "Pilates 45 min". Read calendar bookings. Don't double-schedule.</div>
+            <span class="step-tool"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>get_planned_activities()</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <div class="step-action">Evaluate calorie gap</div>
+            <div class="step-detail">Pilates 45 min ≈ 135 kcal. Goal is 400 kcal. Gap = 265 kcal. Decide whether to suggest add-on.</div>
+            <span class="step-tool"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>evaluate_calorie_gap()</span>
+            <span class="step-decision">→ reasoning: "Add a 30 min walk to close the gap gently"</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <div class="step-action">Pivot check</div>
+            <div class="step-detail">Readiness = 38/100 (high soreness). Override Pilates → Rest + light walk. Flag pivot.</div>
+            <span class="step-decision">→ reasoning: "Readiness too low for any structured session today"</span>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">7</div>
+          <div class="step-body">
+            <div class="step-action">Build & save final plan</div>
+            <div class="step-detail">Write structured plan with activities, kcal, RPE, coach note, pivot flag to UserStore.</div>
+            <span class="step-tool"><svg viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>save_plan()</span>
+            <span style="display:inline-block;margin-top:4px;font-size:10px;font-weight:700;background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:9999px;padding:2px 8px;">⏹ STOP — plan complete</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tools exposed to agent -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Tools available to agent</div>
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-card-name">fetch_healthkit()</div>
+            <div class="tool-card-desc">Sleep, HRV, active energy, resting HR</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">fetch_weather()</div>
+            <div class="tool-card-desc">Temp, rain prob, UV, hourly forecast</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">get_user_profile()</div>
+            <div class="tool-card-desc">Goal, phase, conditions, preferences</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">get_planned_activities()</div>
+            <div class="tool-card-desc">User-entered + calendar bookings</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">get_training_history()</div>
+            <div class="tool-card-desc">Last 7 days volume, effort gaps, streaks</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">evaluate_calorie_gap()</div>
+            <div class="tool-card-desc">Planned kcal vs daily target, suggest add-on</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">get_nutrition_today()</div>
+            <div class="tool-card-desc">Calories eaten, macros, fuelling status</div>
+          </div>
+          <div class="tool-card">
+            <div class="tool-card-name">save_plan()</div>
+            <div class="tool-card-desc">Persist final plan. Triggers STOP.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="width:2px;height:44px;background:var(--border);margin:0 auto;position:relative;">
+      <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 4px;">▼</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         DECISION BRANCHES
+    ══════════════════════════════════ -->
+    <div class="section-label">4 — Agent Decision Branches</div>
+    <div class="branch">
+
+      <div class="branch-item branch-green">
+        <div class="branch-icon">💪</div>
+        <div class="branch-title">Full Session</div>
+        <div class="branch-sub">Readiness ≥ 70<br/>Weather clear<br/>Plan as per phase</div>
+      </div>
+
+      <div class="branch-item branch-yellow">
+        <div class="branch-icon">🔄</div>
+        <div class="branch-title">Adaptive Pivot</div>
+        <div class="branch-sub">Readiness 40–69<br/>Rain / luteal phase<br/>Modify intensity or swap activity</div>
+      </div>
+
+      <div class="branch-item branch-red">
+        <div class="branch-icon">🛋️</div>
+        <div class="branch-title">Rest + Recovery</div>
+        <div class="branch-sub">Readiness &lt; 40<br/>High effort gap yesterday<br/>Mandatory recovery day</div>
+      </div>
+
+    </div>
+
+    <div style="width:2px;height:44px;background:var(--border);margin:0 auto;position:relative;">
+      <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 4px;">▼</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         OUTPUT
+    ══════════════════════════════════ -->
+    <div class="section-label">5 — Plan Output → Dashboard</div>
+    <div class="output-grid">
+
+      <div class="output-card">
+        <div class="output-card-label">Activities</div>
+        <div class="output-card-val">Pilates · 45 min<br/>Evening Walk · 30 min</div>
+        <div class="output-card-sub">Ordered, with Start buttons</div>
+      </div>
+
+      <div class="output-card">
+        <div class="output-card-label">Calorie Target</div>
+        <div class="output-card-val">~310 kcal</div>
+        <div class="output-card-sub">Adjusted for readiness score 62</div>
+      </div>
+
+      <div class="output-card">
+        <div class="output-card-label">Readiness</div>
+        <div class="output-card-val">62 / 100</div>
+        <div class="output-card-sub">Good to train — moderate session</div>
+      </div>
+
+      <div class="output-card">
+        <div class="output-card-label">Coach Note</div>
+        <div class="output-card-val">"Soreness is real today — Pilates is the right call. Walk it off tonight."</div>
+        <div class="output-card-sub">Personal, warm, 1 sentence</div>
+      </div>
+
+      <div class="output-card">
+        <div class="output-card-label">Pivot Flag</div>
+        <div class="output-card-val" style="color:var(--green);">No pivot needed</div>
+        <div class="output-card-sub">User plan honoured</div>
+      </div>
+
+      <div class="output-card">
+        <div class="output-card-label">Why</div>
+        <div class="output-card-val">"Sleep 6.1h + moderate soreness. Kept your Pilates, added evening walk to hit kcal goal."</div>
+        <div class="output-card-sub">Transparent reasoning</div>
+      </div>
+
+    </div>
+
+    <div style="width:2px;height:44px;background:var(--border);margin:0 auto;position:relative;">
+      <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted);background:var(--bg);padding:2px 4px;">▼</div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         FEEDBACK LOOP
+    ══════════════════════════════════ -->
+    <div class="section-label">6 — Post-Workout Feedback Loop</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+
+      <div class="box feedback-box">
+        <div class="box-title">Effort Gap Check</div>
+        <div class="box-sub">After workout: actual kcal burned vs planned. Too low → compassionate re-engagement. Too high vs easy plan → mandatory recovery.</div>
+      </div>
+
+      <div class="box feedback-box">
+        <div class="box-title">RPE Debrief</div>
+        <div class="box-sub">User rates perceived effort 1–10. Agent compares to target RPE. Adjusts tomorrow's plan intensity accordingly.</div>
+      </div>
+
+      <div class="box feedback-box">
+        <div class="box-title">Streak & Momentum</div>
+        <div class="box-sub">Agent tracks consistency. After 3 days skipped → gentle re-entry plan. After 7 days consistent → unlock next phase early.</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ── Legend ── -->
+  <div class="divider"></div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Trigger / Data input</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Tool call (Claude → app)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>Claude agent reasoning</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>Decision / branch</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Adaptive pivot</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Rest / recovery override</div>
+  </div>
+
+  <!-- ── Current vs Target ── -->
+  <div class="divider"></div>
+  <div class="section-label">Current vs Target State</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <div style="background:var(--red-dim);border:1px solid rgba(248,113,113,0.2);border-radius:14px;padding:16px;">
+      <div style="font-size:12px;font-weight:800;color:var(--red);margin-bottom:10px;">NOW — Rule-Based</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:12px;color:var(--muted);">✗ Single hardcoded if/else plan per phase</div>
+        <div style="font-size:12px;color:var(--muted);">✗ No tool calls — data injected manually</div>
+        <div style="font-size:12px;color:var(--muted);">✗ No user-entered activities respected</div>
+        <div style="font-size:12px;color:var(--muted);">✗ No calorie gap reasoning</div>
+        <div style="font-size:12px;color:var(--muted);">✗ No feedback loop to next day</div>
+        <div style="font-size:12px;color:var(--muted);">✗ One API call, no agent loop</div>
+      </div>
+    </div>
+
+    <div style="background:var(--green-dim);border:1px solid rgba(74,222,128,0.2);border-radius:14px;padding:16px;">
+      <div style="font-size:12px;font-weight:800;color:var(--green);margin-bottom:10px;">TARGET — True Agent</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:12px;color:var(--muted);">✓ Claude reasons step-by-step with 8 tools</div>
+        <div style="font-size:12px;color:var(--muted);">✓ Tools call HealthKit, Weather, Profile live</div>
+        <div style="font-size:12px;color:var(--muted);">✓ Respects user-entered Pilates / hike</div>
+        <div style="font-size:12px;color:var(--muted);">✓ Detects calorie gap, suggests add-on</div>
+        <div style="font-size:12px;color:var(--muted);">✓ Post-workout RPE closes the loop</div>
+        <div style="font-size:12px;color:var(--muted);">✓ Multi-step agent loop with stop tool</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

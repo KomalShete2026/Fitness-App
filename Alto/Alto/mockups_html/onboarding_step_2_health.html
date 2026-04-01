@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto – Step 2: Health Conditions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #1a1108;
+      --surface:     #231809;
+      --card:        #2c1f10;
+      --border:      #4a3018;
+      --primary:     #f48c25;
+      --primary-dim: rgba(244,140,37,0.12);
+      --text:        #f0ede8;
+      --muted:       #7a7870;
+      --danger:      #f87171;
+      --danger-dim:  rgba(248,113,113,0.08);
+      --danger-bdr:  rgba(248,113,113,0.25);
+    }
+
+    body {
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .shell {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+      position: relative;
+    }
+
+    /* ── Background silhouette ── */
+    .bg-figure {
+      position: absolute;
+      top: -10px; right: -20px;
+      width: 180px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* ── Progress ── */
+    .progress-track { display: flex; gap: 6px; }
+    .progress-pill  { flex: 1; height: 4px; border-radius: 9999px; background: var(--border); }
+    .progress-pill.active { background: var(--primary); }
+
+    /* ── Header ── */
+    .step-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 6px;
+    }
+    .step-title    { font-size: 30px; font-weight: 800; line-height: 1.15; }
+    .step-subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+    /* ── Check items ── */
+    .check-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .check-item {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.18s;
+      cursor: pointer;
+    }
+    .check-item:hover  { border-color: rgba(244,140,37,0.5); }
+    .check-item.checked { border-color: var(--primary); }
+
+    .check-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 18px;
+      transition: background 0.18s;
+    }
+    .check-item.checked .check-row { background: var(--primary-dim); }
+
+    /* custom box */
+    .check-box {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+      pointer-events: none;
+    }
+    .check-item.checked .check-box {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .check-box::after {
+      content: '';
+      width: 5px; height: 10px;
+      border: 2.5px solid #1a1108;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) scaleY(0);
+      transition: transform 0.15s ease;
+      margin-top: -2px;
+    }
+    .check-item.checked .check-box::after { transform: rotate(45deg) scaleY(1); }
+
+    .check-icon  { font-size: 20px; flex-shrink: 0; }
+    .check-label { font-size: 15px; font-weight: 600; color: var(--text); flex: 1; }
+    .check-arrow {
+      font-size: 12px; color: var(--muted);
+      transition: transform 0.25s ease;
+      flex-shrink: 0;
+    }
+    .check-item.checked .check-arrow { color: var(--primary); }
+    .check-item.checked .check-arrow.rotate { transform: rotate(180deg); }
+
+    /* ── Expandable panel ── */
+    .expand-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+    .expand-panel.open {
+      max-height: 500px;
+      opacity: 1;
+    }
+    .expand-inner {
+      padding: 0 18px 16px;
+    }
+    .expand-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 14px;
+    }
+
+    /* ── Joint chips ── */
+    .joint-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px; display: block;
+    }
+    .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .joint-chip {
+      padding: 7px 14px;
+      border-radius: 9999px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .joint-chip:hover { border-color: var(--primary); color: var(--text); }
+    .joint-chip.selected {
+      border-color: var(--primary);
+      background: var(--primary-dim);
+      color: var(--primary);
+    }
+
+    /* ── Other textarea ── */
+    .field-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px; display: block;
+    }
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #c8a97e;
+      font-family: inherit; font-size: 14px; font-weight: 500;
+      padding: 12px 14px; outline: none;
+      resize: vertical; min-height: 88px; line-height: 1.5;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    textarea::placeholder { color: var(--muted); font-weight: 400; }
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(244,140,37,0.15);
+    }
+
+    /* ── Heart disclaimer ── */
+    .disclaimer {
+      background: var(--danger-dim);
+      border: 1px solid var(--danger-bdr);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .disclaimer-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .disclaimer-title { font-size: 13px; font-weight: 700; color: var(--danger); margin-bottom: 3px; }
+    .disclaimer-body  { font-size: 12px; color: rgba(248,113,113,0.8); line-height: 1.5; }
+
+    /* ── Footer ── */
+    .skip-note    { font-size: 12px; color: var(--muted); text-align: center; }
+    .privacy-note { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+    /* ── Nav ── */
+    .nav { display: flex; gap: 10px; }
+    .btn-back {
+      padding: 14px 20px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-back:hover { border-color: var(--text); color: var(--text); }
+    .btn-next {
+      flex: 1; padding: 14px; border-radius: 12px;
+      border: none; background: var(--primary);
+      color: #1a1108; font-family: inherit; font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-next:hover  { opacity: 0.9; }
+    .btn-next:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Background silhouette -->
+  <svg class="bg-figure" viewBox="0 0 160 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#f48c25" stop-opacity="0.11"/>
+        <stop offset="100%" stop-color="#f48c25" stop-opacity="0.01"/>
+      </linearGradient>
+    </defs>
+    <circle cx="90" cy="32" r="20" fill="url(#g)"/>
+    <path d="M104 20 Q118 8 114 26" stroke="url(#g)" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M74 52 Q68 82 66 112 L114 112 Q112 82 106 52 Z" fill="url(#g)"/>
+    <path d="M74 62 Q52 80 44 106" stroke="url(#g)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M106 62 Q128 80 136 106" stroke="url(#g)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M76 112 Q68 162 62 212 Q58 242 64 282" stroke="url(#g)" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M104 112 Q114 162 118 212 Q122 242 116 282" stroke="url(#g)" stroke-width="14" stroke-linecap="round" fill="none"/>
+  </svg>
+
+  <div class="content">
+
+    <!-- Progress -->
+    <div class="progress-track">
+      <div class="progress-pill active"></div>
+      <div class="progress-pill active"></div>
+      <div class="progress-pill"></div>
+      <div class="progress-pill"></div>
+      <div class="progress-pill"></div>
+    </div>
+
+    <!-- Header -->
+    <div>
+      <p class="step-label">Step 2 of 5</p>
+      <h1 class="step-title">Health Conditions</h1>
+      <p class="step-subtitle">Select all that apply — Alto keeps your plan safe.</p>
+    </div>
+
+    <!-- Conditions -->
+    <div class="check-list">
+
+      <!-- Asthma -->
+      <div class="check-item" id="item-asthma" onclick="toggleItem('asthma')">
+        <div class="check-row">
+          <span class="check-box"></span>
+          <span class="check-icon">🫁</span>
+          <span class="check-label">Asthma</span>
+        </div>
+      </div>
+
+      <!-- Heart Condition -->
+      <div class="check-item" id="item-heart" onclick="toggleItem('heart')">
+        <div class="check-row">
+          <span class="check-box"></span>
+          <span class="check-icon">🫀</span>
+          <span class="check-label">Heart Condition</span>
+        </div>
+        <div class="expand-panel" id="panel-heart">
+          <div class="expand-inner">
+            <div class="expand-divider"></div>
+            <div class="disclaimer">
+              <span class="disclaimer-icon">⚠️</span>
+              <div>
+                <p class="disclaimer-title">Medical Disclaimer</p>
+                <p class="disclaimer-body">Please consult a physician before starting or intensifying any physical activity.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Joint Issues -->
+      <div class="check-item" id="item-joints" onclick="toggleItem('joints')">
+        <div class="check-row">
+          <span class="check-box"></span>
+          <span class="check-icon">🦴</span>
+          <span class="check-label">Joint Issues</span>
+          <span class="check-arrow rotate" id="arrow-joints">▼</span>
+        </div>
+        <div class="expand-panel" id="panel-joints">
+          <div class="expand-inner">
+            <div class="expand-divider"></div>
+            <span class="joint-label">Which joints are affected?</span>
+            <div class="chip-grid">
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Knee</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Hip</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Shoulder</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Lower Back</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Ankle</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Wrist</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Elbow</div>
+              <div class="joint-chip" onclick="toggleJoint(event, this)">Neck</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diabetes -->
+      <div class="check-item" id="item-diabetes" onclick="toggleItem('diabetes')">
+        <div class="check-row">
+          <span class="check-box"></span>
+          <span class="check-icon">🩸</span>
+          <span class="check-label">Diabetes</span>
+        </div>
+      </div>
+
+      <!-- Other -->
+      <div class="check-item" id="item-other" onclick="toggleItem('other')">
+        <div class="check-row">
+          <span class="check-box"></span>
+          <span class="check-icon">➕</span>
+          <span class="check-label">Other</span>
+          <span class="check-arrow rotate" id="arrow-other">▼</span>
+        </div>
+        <div class="expand-panel" id="panel-other">
+          <div class="expand-inner">
+            <div class="expand-divider"></div>
+            <span class="field-label">Describe your condition</span>
+            <textarea placeholder="Tell Alto what to consider..." onclick="event.stopPropagation()"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="skip-note">No conditions? Simply tap Continue.</p>
+
+    <!-- Privacy -->
+    <p class="privacy-note">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+      Stays on-device. Used only for AI personalization.
+    </p>
+
+    <!-- Nav -->
+    <div class="nav">
+      <button class="btn-back">← Back</button>
+      <button class="btn-next">Continue →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const selected = new Set();
+  const hasSub = new Set(['heart', 'joints', 'other']);
+
+  function toggleItem(key) {
+    const item  = document.getElementById('item-' + key);
+    const panel = document.getElementById('panel-' + key);
+    const arrow = document.getElementById('arrow-' + key);
+
+    const isChecked = item.classList.toggle('checked');
+
+    if (isChecked) selected.add(key);
+    else           selected.delete(key);
+
+    if (panel) panel.classList.toggle('open', isChecked);
+    if (arrow) arrow.style.transform = isChecked ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+
+  function toggleJoint(e, el) {
+    e.stopPropagation();
+    el.classList.toggle('selected');
+  }
+</script>
+</body>
+</html>

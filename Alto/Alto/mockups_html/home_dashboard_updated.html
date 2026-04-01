@@ -1,127 +1,1911 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Alto Home Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Alto – Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #221910;
-      --card: #2a1d12;
-      --border: #5a3b22;
-      --primary: #f48c25;
-      --text: #ececf0;
-      --muted: #8f93a3;
+      --bg:          #1a1108;
+      --surface:     #231809;
+      --card:        #2c1f10;
+      --border:      #4a3018;
+      --primary:     #f48c25;
+      --primary-dim: rgba(244,140,37,0.12);
+      --text:        #f0ede8;
+      --muted:       #7a7870;
+      --green:       #4ade80;
+      --green-dim:   rgba(74,222,128,0.10);
+      --red:         #f87171;
+      --red-dim:     rgba(248,113,113,0.08);
+      --blue:        #60a5fa;
+      --blue-dim:    rgba(96,165,250,0.10);
     }
+
     body {
-      min-height: 100dvh;
-      background: radial-gradient(circle at top right, #3a2616 0%, var(--bg) 45%);
+      background: var(--bg);
       color: var(--text);
       font-family: "Space Grotesk", ui-sans-serif, system-ui;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
     }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; }
-    .chip { border: 1px solid var(--border); border-radius: 9999px; padding: 8px 12px; font-size: 12px; }
-    .chip.active { border-color: var(--primary); color: var(--primary); background: rgba(244,140,37,0.08); }
+
+    .shell {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 20px 16px 80px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* ── Card base ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 6px; display: block;
+    }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ════════════════════════════════
+       SENTINEL POPUP OVERLAY
+    ════════════════════════════════ */
+    .overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(10,6,2,0.82);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.25s ease;
+    }
+    .overlay.hiding {
+      animation: fadeOut 0.3s ease forwards;
+    }
+    @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { to   { opacity: 0; } }
+
+    .popup {
+      width: 100%; max-width: 400px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px 24px 28px;
+      animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .overlay.hiding .popup {
+      animation: popOut 0.25s ease forwards;
+    }
+    @keyframes popIn  { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+    @keyframes popOut { to   { opacity: 0; transform: scale(0.92); } }
+
+    .popup-handle { display: none; }
+    .popup-title {
+      font-size: 20px; font-weight: 800; margin-bottom: 4px;
+    }
+    .popup-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+    .popup-slider-row {
+      display: flex; flex-direction: column; gap: 24px; margin-bottom: 24px;
+    }
+
+    /* header row: name left, score+desc right */
+    .psl-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .psl-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .psl-score-wrap { text-align: right; }
+    .psl-score {
+      font-size: 18px; font-weight: 800; color: var(--primary); line-height: 1;
+    }
+    .psl-desc {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      margin-top: 2px; transition: color 0.2s;
+    }
+
+    /* segmented bar — 5 clickable+draggable segments */
+    .seg-track {
+      display: flex; gap: 5px;
+      user-select: none;
+    }
+    .seg {
+      flex: 1; height: 14px; border-radius: 9999px;
+      background: var(--border);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.12s;
+    }
+    .seg:hover { transform: scaleY(1.3); }
+    .seg:active { transform: scaleY(0.9); }
+    .seg.lit { background: var(--primary); }
+    .seg.lit.dim1 { background: rgba(244,140,37,0.35); }
+    .seg.lit.dim2 { background: rgba(244,140,37,0.55); }
+    .seg.lit.dim3 { background: rgba(244,140,37,0.75); }
+    .seg.lit.dim4 { background: var(--primary); }
+    .seg.lit.dim5 { background: #ffb347; }
+    /* thumb feel on active seg */
+    .seg:active { transform: scaleY(1.4); }
+
+    .btn-submit-popup {
+      width: 100%; padding: 15px; border-radius: 14px;
+      border: none; background: var(--primary);
+      color: #1a1108; font-family: inherit; font-size: 16px; font-weight: 800;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-submit-popup:hover  { opacity: 0.9; }
+    .btn-submit-popup:active { transform: scale(0.98); }
+
+    /* ── Step indicators ── */
+    .step-row { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; }
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+    .step-dot.active { background: var(--primary); width: 20px; border-radius: 9999px; }
+    .step-dot.done   { background: var(--green); }
+    .step-label { font-size: 11px; font-weight: 700; color: var(--muted); margin-left: 4px; letter-spacing: 0.06em; }
+
+    /* ── Score banner ── */
+    .score-banner {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 20px;
+    }
+    .score-banner-num { font-size: 32px; font-weight: 800; line-height: 1; min-width: 48px; }
+    .score-banner-lbl { font-size: 13px; font-weight: 700; }
+    .score-banner-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Suggestion chips ── */
+    .suggestion-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .s-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .s-chip.on { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
+    .s-chip svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; }
+
+    /* ── Activity type row ── */
+    .act-type-row { display: flex; gap: 7px; margin-bottom: 12px; }
+    .act-type-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+      padding: 10px 4px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      font-family: inherit; font-size: 10px; font-weight: 700; color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .act-type-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .act-type-btn.on { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
+
+    /* ── Custom add row ── */
+    .custom-add-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .custom-input {
+      flex: 1; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: inherit; font-size: 13px;
+      padding: 10px 12px; outline: none; transition: border-color 0.2s;
+    }
+    .custom-input::placeholder { color: var(--muted); }
+    .custom-input:focus { border-color: var(--primary); }
+    .dur-input {
+      width: 60px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: inherit; font-size: 13px;
+      padding: 10px 6px; outline: none; text-align: center; transition: border-color 0.2s;
+    }
+    .dur-input:focus { border-color: var(--primary); }
+    .btn-add-sm {
+      padding: 10px 14px; border-radius: 10px; border: none;
+      background: var(--primary); color: #1a1108;
+      font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer;
+    }
+
+    /* ── Plan list inside popup ── */
+    .plan-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; min-height: 36px; }
+    .plan-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 9px 12px;
+      animation: fadeSlideIn 0.2s ease;
+    }
+    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+    .plan-item-name { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+    .plan-item-dur  { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .plan-item-rm   { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0; transition: color 0.15s; }
+    .plan-item-rm:hover { color: var(--red); }
+    .plan-empty { font-size: 12px; color: var(--muted); padding: 10px 0; text-align: center; }
+
+    /* ════════════════════════════════
+       HEADER
+    ════════════════════════════════ */
+    .header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .header-left {}
+    .header-greeting {
+      font-size: 24px; font-weight: 800; line-height: 1.2;
+    }
+    .header-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    .avatar-wrap { position: relative; flex-shrink: 0; cursor: pointer; }
+    .avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      object-fit: cover; border: 2px solid var(--primary);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; overflow: hidden;
+    }
+    .avatar-edit {
+      position: absolute; bottom: -2px; right: -2px;
+      background: var(--primary); color: #1a1108;
+      font-size: 9px; font-weight: 800;
+      padding: 2px 5px; border-radius: 9999px;
+    }
+
+    /* ════════════════════════════════
+       STATUS PILL ROW
+    ════════════════════════════════ */
+    .status-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 9999px;
+      font-size: 12px; font-weight: 600; border: 1px solid;
+    }
+    .status-pill.green { background: var(--green-dim); border-color: rgba(74,222,128,0.3); color: var(--green); }
+    .status-pill.orange { background: var(--primary-dim); border-color: rgba(244,140,37,0.3); color: var(--primary); }
+    .status-pill.blue { background: var(--blue-dim); border-color: rgba(96,165,250,0.3); color: var(--blue); }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ════════════════════════════════
+       READINESS RING
+    ════════════════════════════════ */
+    .readiness-row { display: flex; align-items: center; gap: 16px; }
+    .ring-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+    .ring-wrap svg { transform: rotate(-90deg); }
+    .ring-bg   { fill: none; stroke: var(--border); stroke-width: 7; }
+    .ring-fill { fill: none; stroke: var(--primary); stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease; }
+    .ring-label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ring-score { font-size: 20px; font-weight: 800; color: var(--text); line-height: 1; }
+    .ring-sub   { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 0.05em; }
+    .readiness-info {}
+    .readiness-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .readiness-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .readiness-tags  { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .readiness-tag {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 9999px; padding: 3px 9px;
+    }
+
+    /* ════════════════════════════════
+       STATS ROW (sleep / weather)
+    ════════════════════════════════ */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-mini {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px;
+    }
+    .stat-mini-icon  { font-size: 20px; margin-bottom: 6px; }
+    .stat-mini-val   { font-size: 18px; font-weight: 800; color: var(--text); }
+    .stat-mini-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    /* ════════════════════════════════
+       MOOD
+    ════════════════════════════════ */
+    .mood-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mood-btn {
+      padding: 11px 10px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.15s;
+    }
+    .mood-btn:hover { border-color: rgba(244,140,37,0.5); color: var(--text); }
+    .mood-btn.active {
+      border-color: var(--primary); background: var(--primary-dim); color: var(--primary);
+    }
+
+    /* ════════════════════════════════
+       SENTINEL SLIDERS
+    ════════════════════════════════ */
+    .sentinel-row { display: flex; flex-direction: column; gap: 14px; }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-label { font-size: 13px; font-weight: 600; color: var(--text); width: 88px; flex-shrink: 0; }
+    .slider {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 4px; border-radius: 9999px;
+      background: var(--border); outline: none; cursor: pointer;
+    }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--primary); border: 2px solid #1a1108;
+      box-shadow: 0 0 0 3px rgba(244,140,37,0.2);
+      cursor: pointer;
+    }
+    .slider-val {
+      font-size: 13px; font-weight: 800; color: var(--primary);
+      width: 20px; text-align: right; flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════
+       WORKOUT CARD
+    ════════════════════════════════ */
+    .workout-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .workout-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .workout-meta  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .pivot-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.3);
+      color: #fbbf24; border-radius: 9999px; padding: 4px 10px; flex-shrink: 0;
+    }
+    .btn-start {
+      width: 100%; margin-top: 14px; padding: 14px;
+      border-radius: 12px; border: none;
+      background: var(--primary); color: #1a1108;
+      font-family: inherit; font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-start:hover  { opacity: 0.9; }
+    .btn-start:active { transform: scale(0.98); }
+
+    .btn-pivot {
+      width: 100%; margin-top: 8px; padding: 11px;
+      border-radius: 12px; border: 1.5px solid var(--border);
+      background: transparent; color: var(--muted);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-pivot:hover { border-color: #fbbf24; color: #fbbf24; }
+
+    /* ════════════════════════════════
+       GOAL PROGRESS
+    ════════════════════════════════ */
+    .goal-item { display: flex; flex-direction: column; gap: 8px; }
+    .goal-item + .goal-item { margin-top: 14px; }
+    .goal-row  { display: flex; justify-content: space-between; align-items: center; }
+    .goal-name { font-size: 14px; font-weight: 700; }
+    .goal-phase {
+      font-size: 11px; font-weight: 700;
+      color: var(--primary); letter-spacing: 0.06em;
+    }
+    .progress-bar {
+      height: 6px; border-radius: 9999px;
+      background: var(--border); overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 9999px;
+      background: var(--primary); transition: width 0.6s ease;
+    }
+    .phase-row {
+      display: flex; justify-content: space-between;
+      font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.06em;
+    }
+    .phase-row .active-phase { color: var(--primary); }
+
+    /* ════════════════════════════════
+       MACRO / NUTRITION
+    ════════════════════════════════ */
+    .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .macro-cell {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 8px; text-align: center;
+    }
+    .macro-val   { font-size: 16px; font-weight: 800; color: var(--text); }
+    .macro-label { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    .btn-log-meal {
+      width: 100%; margin-top: 12px; padding: 12px;
+      border-radius: 12px; border: 1.5px dashed var(--border);
+      background: transparent; color: var(--muted);
+      font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .btn-log-meal:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
+
+    /* ════════════════════════════════
+       VOICE LOG
+    ════════════════════════════════ */
+    .voice-input {
+      width: 100%; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px;
+      color: #c8a97e; font-family: inherit; font-size: 14px; font-weight: 500;
+      padding: 12px 14px; outline: none; resize: none; min-height: 72px;
+      line-height: 1.5; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .voice-input::placeholder { color: var(--muted); font-weight: 400; }
+    .voice-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(244,140,37,0.15); }
+
+    .voice-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .btn-mic {
+      padding: 11px 18px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-mic:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-mic.recording { border-color: var(--red); color: var(--red); background: var(--red-dim); animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+
+    .btn-parse {
+      flex: 1; padding: 11px; border-radius: 10px;
+      border: none; background: var(--primary);
+      color: #1a1108; font-family: inherit; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-parse:hover { opacity: 0.88; }
+
+    /* ════════════════════════════════
+       BOTTOM NAV
+    ════════════════════════════════ */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 420px; z-index: 50;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px; padding: 10px 0 14px;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; color: var(--muted);
+      transition: color 0.2s;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--primary); }
+    .nav-icon  { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+    .nav-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width 0.2s; }
+    .nav-tab.active .nav-icon svg { stroke-width: 2.2; }
+    .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+
+    /* ════════════════════════════════
+       NUTRITION PAGE
+    ════════════════════════════════ */
+    .cal-ring-wrap {
+      display: flex; align-items: center; gap: 18px;
+    }
+    .cal-ring { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+    .cal-ring svg { transform: rotate(-90deg); }
+    .cal-ring-label {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .cal-ring-val  { font-size: 17px; font-weight: 800; color: var(--text); line-height: 1; }
+    .cal-ring-unit { font-size: 9px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .cal-info {}
+    .cal-goal-row { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .cal-stat { text-align: center; }
+    .cal-stat-val   { font-size: 15px; font-weight: 800; color: var(--text); }
+    .cal-stat-label { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    .macro-row {
+      display: flex; flex-direction: column; gap: 10px;
+      margin-top: 14px;
+    }
+    .macro-line { display: flex; flex-direction: column; gap: 5px; }
+    .macro-line-header { display: flex; justify-content: space-between; align-items: center; }
+    .macro-line-name  { font-size: 13px; font-weight: 700; color: var(--text); }
+    .macro-line-vals  { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .macro-bar { height: 6px; border-radius: 9999px; background: var(--border); overflow: hidden; }
+    .macro-fill { height: 100%; border-radius: 9999px; transition: width 0.6s ease; }
+    .macro-fill.protein { background: #60a5fa; }
+    .macro-fill.carbs   { background: #4ade80; }
+    .macro-fill.fat     { background: #f48c25; }
+
+    .meal-list { display: flex; flex-direction: column; gap: 8px; }
+    .meal-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+    }
+    .meal-icon  { font-size: 22px; flex-shrink: 0; }
+    .meal-info  { flex: 1; }
+    .meal-name  { font-size: 14px; font-weight: 700; color: var(--text); }
+    .meal-items { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .meal-kcal  { font-size: 13px; font-weight: 800; color: var(--primary); flex-shrink: 0; }
+
+    /* ════════════════════════════════
+       GOALS PAGE
+    ════════════════════════════════ */
+    .goal-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 18px;
+    }
+    .goal-card + .goal-card { margin-top: 14px; }
+    .goal-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .goal-card-emoji  { font-size: 28px; }
+    .goal-card-info   { flex: 1; }
+    .goal-card-name   { font-size: 18px; font-weight: 800; }
+    .goal-card-date   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .goal-stat-row    { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .goal-stat {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px; text-align: center;
+    }
+    .goal-stat-val   { font-size: 16px; font-weight: 800; color: var(--primary); }
+    .goal-stat-label { font-size: 10px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    /* ════════════════════════════════
+       PROFILE PAGE
+    ════════════════════════════════ */
+    .profile-avatar-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; padding: 8px 0 4px;
+    }
+    .profile-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--surface); border: 2px solid var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+    }
+    .profile-name { font-size: 20px; font-weight: 800; }
+    .profile-handle { font-size: 13px; color: var(--muted); }
+
+    .setting-group { display: flex; flex-direction: column; gap: 0; }
+    .setting-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-icon { font-size: 18px; flex-shrink: 0; width: 28px; text-align: center; }
+    .setting-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text); }
+    .setting-value { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .setting-chevron { font-size: 12px; color: var(--muted); margin-left: 6px; }
+
+    .stat-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .stat-chip {
+      padding: 7px 14px; border-radius: 9999px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-size: 13px; font-weight: 600; color: var(--text);
+      display: flex; gap: 6px; align-items: center;
+    }
+    .stat-chip-label { color: var(--muted); font-weight: 500; }
+
+    /* ════════════════════════════════
+       WEATHER STRIP
+    ════════════════════════════════ */
+    .weather-strip {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--blue-dim); border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 14px; padding: 12px 16px;
+    }
+    .weather-icon { font-size: 28px; flex-shrink: 0; }
+    .weather-info {}
+    .weather-temp { font-size: 18px; font-weight: 800; }
+    .weather-desc { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .weather-conflict {
+      margin-left: auto; font-size: 11px; font-weight: 700;
+      color: #fbbf24; background: rgba(251,191,36,0.1);
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 9999px; padding: 4px 10px; flex-shrink: 0;
+    }
+
+    /* ── Calorie banner ── */
+    .cal-banner {
+      display: flex; align-items: flex-start; gap: 10px;
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+      border: 1px solid; transition: all 0.3s;
+    }
+    .cal-banner.warn { background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); }
+    .cal-banner.ok   { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.25); }
+    .cal-banner svg  { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; flex-shrink: 0; margin-top: 1px; }
+    .cal-banner.warn svg { color: #fbbf24; }
+    .cal-banner.ok   svg { color: var(--green); }
+    .cal-banner-body {}
+    .cal-banner-title { font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+    .cal-banner.warn .cal-banner-title { color: #fbbf24; }
+    .cal-banner.ok   .cal-banner-title { color: var(--green); }
+    .cal-banner-sub   { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .cal-banner-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .cal-suggest-chip {
+      font-size: 11px; font-weight: 700;
+      color: #fbbf24; background: rgba(251,191,36,0.1);
+      border: 1px solid rgba(251,191,36,0.3);
+      border-radius: 9999px; padding: 3px 10px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cal-suggest-chip:hover { background: rgba(251,191,36,0.2); }
+
+    /* ── Edit button ── */
+    .edit-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700;
+      color: var(--muted); background: none; border: none;
+      cursor: pointer; font-family: inherit; padding: 0;
+      transition: color 0.15s;
+    }
+    .edit-btn:hover { color: var(--primary); }
+    .edit-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+    /* ── Edit modals ── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(10,6,2,0.85); backdrop-filter: blur(6px);
+      display: flex; align-items: flex-end; justify-content: center;
+      animation: fadeIn 0.2s ease;
+    }
+    .modal-overlay.hiding { animation: fadeOut 0.25s ease forwards; }
+    .modal {
+      width: 100%; max-width: 420px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 36px;
+      animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      max-height: 85dvh; overflow-y: auto;
+    }
+    .modal-overlay.hiding .modal { animation: slideDown 0.25s ease forwards; }
+    @keyframes slideUp   { from { transform: translateY(60px); opacity:0; } to { transform:none; opacity:1; } }
+    @keyframes slideDown { to   { transform: translateY(60px); opacity:0; } }
+    .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 9999px; margin: 0 auto 20px; }
+    .modal-title  { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .modal-sub    { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+    /* Goal edit rows */
+    .goal-edit-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+      animation: fadeSlideIn 0.2s ease;
+    }
+    .goal-edit-emoji { font-size: 20px; flex-shrink: 0; }
+    .goal-edit-info  { flex: 1; }
+    .goal-edit-name  { font-size: 14px; font-weight: 700; color: var(--text); }
+    .goal-edit-date  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .goal-rm-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px; transition: color 0.15s; }
+    .goal-rm-btn:hover { color: var(--red); }
+
+    /* Add goal inline form */
+    .add-goal-form {
+      display: flex; flex-direction: column; gap: 8px; margin-top: 12px;
+      padding: 14px; background: var(--surface);
+      border: 1.5px dashed var(--border); border-radius: 12px;
+    }
+    .modal-input {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: inherit;
+      font-size: 13px; padding: 10px 12px; outline: none; width: 100%;
+      transition: border-color 0.2s;
+    }
+    .modal-input::placeholder { color: var(--muted); }
+    .modal-input:focus { border-color: var(--primary); }
+    .modal-row { display: flex; gap: 8px; }
+    .btn-modal-add {
+      padding: 10px; border-radius: 10px; border: none;
+      background: var(--primary); color: #1a1108;
+      font-family: inherit; font-size: 13px; font-weight: 800;
+      cursor: pointer; width: 100%;
+    }
+    .btn-modal-save {
+      width: 100%; padding: 14px; border-radius: 14px; border: none;
+      background: var(--primary); color: #1a1108;
+      font-family: inherit; font-size: 15px; font-weight: 800;
+      cursor: pointer; margin-top: 16px;
+    }
+
+    /* Workout edit - reuse plan styles already defined */
   </style>
 </head>
-<body class="max-w-md mx-auto px-4 py-5 space-y-4">
-  <header class="card p-4 flex items-start justify-between gap-3">
-    <div class="space-y-1">
-      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Alto Home</p>
-      <h1 id="welcomeName" class="text-2xl font-extrabold leading-tight">Hi Komal 👋</h1>
-      <p class="text-sm text-[var(--muted)]">Let’s make today count. You are building momentum.</p>
+<body>
+<!-- ════ SENTINEL POPUP ════ -->
+<div class="overlay" id="sentinel-overlay">
+  <div class="popup">
+
+    <!-- Step indicators -->
+    <div class="step-row">
+      <div class="step-dot active" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
+      <span class="step-label" id="step-label">STEP 1 OF 2</span>
     </div>
 
-    <label class="relative cursor-pointer">
-      <input id="profileUpload" type="file" accept="image/*" class="hidden" />
-      <img id="profilePreview" src="https://via.placeholder.com/56x56.png?text=%F0%9F%91%A4" alt="Profile"
-           class="h-14 w-14 rounded-full object-cover border border-[var(--primary)]" />
-      <span class="absolute -bottom-1 -right-1 bg-[var(--primary)] text-[#1b130b] text-[10px] font-bold px-2 py-0.5 rounded-full">Edit</span>
-    </label>
-  </header>
+    <!-- ── STEP 1: Readiness ── -->
+    <div id="step1">
+      <p class="popup-title">Good morning, Komal.</p>
+      <p class="popup-sub">How does your body feel right now? This shapes your readiness score.</p>
 
-  <section class="card p-4 flex items-center justify-between">
-    <div>
-      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Apple Health</p>
-      <p class="text-sm text-[var(--muted)]">Connected · Last sync just now</p>
+      <div class="popup-slider-row">
+        <div>
+          <div class="psl-header">
+            <span class="psl-name">Soreness</span>
+            <div class="psl-score-wrap">
+              <div class="psl-score" id="s-score">0 / 5</div>
+              <div class="psl-desc"  id="s-desc">None at all</div>
+            </div>
+          </div>
+          <div class="seg-track" id="seg-soreness">
+            <div class="seg" onclick="tapSeg('soreness',1)"></div>
+            <div class="seg" onclick="tapSeg('soreness',2)"></div>
+            <div class="seg" onclick="tapSeg('soreness',3)"></div>
+            <div class="seg" onclick="tapSeg('soreness',4)"></div>
+            <div class="seg" onclick="tapSeg('soreness',5)"></div>
+          </div>
+        </div>
+        <div>
+          <div class="psl-header">
+            <span class="psl-name">Stress</span>
+            <div class="psl-score-wrap">
+              <div class="psl-score" id="st-score">0 / 5</div>
+              <div class="psl-desc"  id="st-desc">No stress at all</div>
+            </div>
+          </div>
+          <div class="seg-track" id="seg-stress">
+            <div class="seg" onclick="tapSeg('stress',1)"></div>
+            <div class="seg" onclick="tapSeg('stress',2)"></div>
+            <div class="seg" onclick="tapSeg('stress',3)"></div>
+            <div class="seg" onclick="tapSeg('stress',4)"></div>
+            <div class="seg" onclick="tapSeg('stress',5)"></div>
+          </div>
+        </div>
+        <div>
+          <div class="psl-header">
+            <span class="psl-name">Motivation</span>
+            <div class="psl-score-wrap">
+              <div class="psl-score" id="m-score">0 / 5</div>
+              <div class="psl-desc"  id="m-desc">None at all</div>
+            </div>
+          </div>
+          <div class="seg-track" id="seg-motivation">
+            <div class="seg" onclick="tapSeg('motivation',1)"></div>
+            <div class="seg" onclick="tapSeg('motivation',2)"></div>
+            <div class="seg" onclick="tapSeg('motivation',3)"></div>
+            <div class="seg" onclick="tapSeg('motivation',4)"></div>
+            <div class="seg" onclick="tapSeg('motivation',5)"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-submit-popup" onclick="submitSentinel()">Next — Plan Your Day →</button>
     </div>
-    <span class="text-green-400 text-sm font-semibold">Connected</span>
-  </section>
 
-  <section class="card p-4 space-y-2">
-    <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Your Goal</p>
-    <h2 class="text-xl font-bold">July Marathon - Sub 4:15</h2>
-    <p class="text-sm text-[var(--muted)]">North Star locked. Daily training adapts to keep you on track.</p>
-  </section>
+    <!-- ── STEP 2: Today's Plan ── -->
+    <div id="step2" style="display:none;">
 
-  <section class="card p-4 space-y-3">
-    <div class="flex items-center justify-between">
-      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">How are you feeling today?</p>
-      <span id="moodText" class="text-xs text-[var(--muted)]">Selected: Balanced</span>
+      <!-- Score banner -->
+      <div class="score-banner">
+        <div class="score-banner-num" id="score-banner-num" style="color:var(--primary)">—</div>
+        <div>
+          <div class="score-banner-lbl" id="score-banner-lbl">Calculating…</div>
+          <div class="score-banner-sub">Today's readiness score</div>
+        </div>
+      </div>
+
+      <p style="font-size:15px; font-weight:800; color:var(--text); margin-bottom:4px;">What's on your plan today?</p>
+      <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">Suggested for <strong style="color:var(--primary)">Marathon · Build Phase</strong> — tap to add</p>
+
+      <!-- AI-suggested chips -->
+      <div class="suggestion-chips">
+        <button class="s-chip on" id="chip-tempo" onclick="toggleChip(this,'Tempo Run','45 min')">
+          <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+          Tempo Run · 45 min
+        </button>
+        <button class="s-chip" id="chip-strength" onclick="toggleChip(this,'Strength Session','30 min')">
+          <svg viewBox="0 0 24 24"><path d="M6.5 6.5h11M6.5 6.5V17M17.5 6.5V17M4 9h3M17 9h3M4 14h3M17 14h3"/></svg>
+          Strength · 30 min
+        </button>
+        <button class="s-chip" id="chip-easy" onclick="toggleChip(this,'Easy Run','40 min')">
+          <svg viewBox="0 0 24 24"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m8 18 1.5-5L12 15l2-6 2.5 4"/></svg>
+          Easy Run · 40 min
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">or add your own</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
+
+      <!-- Activity type picker -->
+      <div class="act-type-row" id="act-types">
+        <button class="act-type-btn" onclick="pickType(this,'Hike')">
+          <svg viewBox="0 0 24 24"><path d="M3 17l4-9 3 5 3-3 4 6"/><circle cx="17" cy="4" r="2"/></svg>
+          Hike
+        </button>
+        <button class="act-type-btn" onclick="pickType(this,'Run')">
+          <svg viewBox="0 0 24 24"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m8 18 1.5-5L12 15l2-6 2.5 4H20"/><path d="M4 19h4"/></svg>
+          Run
+        </button>
+        <button class="act-type-btn" onclick="pickType(this,'Cycle')">
+          <svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M12 17.5 9 6l-3.5 5.5H9l3 6"/><path d="m15 6-3 5.5h5L18.5 17"/></svg>
+          Cycle
+        </button>
+        <button class="act-type-btn" onclick="pickType(this,'Swim')">
+          <svg viewBox="0 0 24 24"><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><circle cx="12" cy="6" r="2"/><path d="M12 8v4"/></svg>
+          Swim
+        </button>
+        <button class="act-type-btn" onclick="pickType(this,'Other')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          Other
+        </button>
+      </div>
+
+      <!-- Custom name + duration + add -->
+      <div class="custom-add-row">
+        <input class="custom-input" id="custom-name" placeholder="e.g. 6 mile hike in Marin" />
+        <input class="dur-input" id="custom-dur" placeholder="2 h" />
+        <button class="btn-add-sm" onclick="addCustomActivity()">Add</button>
+      </div>
+
+      <!-- Today's plan list -->
+      <div class="plan-list" id="plan-list">
+        <p class="plan-empty" id="plan-empty" style="display:none">No activities added yet — tap suggestions or add your own.</p>
+      </div>
+
+      <!-- Calorie recommendation banner -->
+      <div class="cal-banner warn" id="cal-banner" style="display:none;">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="cal-banner-body">
+          <div class="cal-banner-title" id="cal-banner-title">Plan may not hit your calorie goal</div>
+          <div class="cal-banner-sub" id="cal-banner-sub">Your plan burns ~0 kcal. Goal: 350 kcal.</div>
+          <div class="cal-banner-chips" id="cal-suggest-chips"></div>
+        </div>
+      </div>
+
+      <button class="btn-submit-popup" onclick="confirmPlan()">Confirm Plan →</button>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 text-center">
-      <button class="chip mood active" data-mood="Ready to Push">Ready to Push</button>
-      <button class="chip mood" data-mood="Balanced">Balanced</button>
-      <button class="chip mood" data-mood="Low Energy">Low Energy</button>
-      <button class="chip mood" data-mood="Muscle Fatigue">Muscle Fatigue</button>
-      <button class="chip mood" data-mood="Mentally Drained">Mentally Drained</button>
-      <button class="chip mood" data-mood="Need Recovery">Need Recovery</button>
+  </div>
+</div>
+
+<div class="shell" id="page-home">
+
+  <!-- ── HEADER ── -->
+  <div class="card header">
+    <div class="header-left">
+      <p class="section-label">Alto</p>
+      <h1 class="header-greeting">Hi Komal 👋</h1>
+      <p class="header-sub">Let's make today count.</p>
     </div>
-  </section>
+    <div class="avatar-wrap" onclick="document.getElementById('avatar-upload').click()">
+      <div class="avatar">🧑</div>
+      <span class="avatar-edit">Edit</span>
+      <input id="avatar-upload" type="file" accept="image/*" style="display:none" onchange="previewAvatar(event)" />
+    </div>
+  </div>
 
-  <section class="card p-4 space-y-2">
-    <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Today's Assigned Workout</p>
-    <h3 class="text-lg font-bold">Tempo Run · 45 mins</h3>
-    <p class="text-sm text-[var(--muted)]">Warm-up 10 min → 3 x 8 min tempo → cool-down 5 min.</p>
-    <button class="w-full mt-2 rounded-xl bg-[var(--primary)] text-[#1b130b] font-bold py-3">Start Workout</button>
-  </section>
+  <!-- ── GOALS SUMMARY ── -->
+  <div class="card" style="padding: 16px 18px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span class="section-label" style="margin-bottom:0;">Your Goals</span>
+      <button class="edit-btn" onclick="openGoalsEdit()"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+    </div>
+    <div id="dashboard-goals-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
 
-  <section class="card p-4 space-y-3">
-    <div class="flex items-center justify-between">
-      <p class="text-xs uppercase tracking-widest text-[var(--primary)] font-bold">Goal Phase Progress</p>
-      <span class="text-sm font-semibold">Build Phase</span>
+  <!-- ── STATUS PILLS ── -->
+  <div class="status-row">
+    <span class="status-pill green"><span class="status-dot"></span>HealthKit Connected</span>
+    <span class="status-pill orange"><span class="status-dot"></span>Build Phase</span>
+    <span class="status-pill blue"><span class="status-dot"></span>72°F · Sunny</span>
+  </div>
+
+  <!-- ── READINESS RING ── -->
+  <div class="card">
+    <span class="section-label">Daily Readiness</span>
+    <div class="readiness-row">
+      <div class="ring-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle class="ring-bg"   cx="40" cy="40" r="33"/>
+          <circle class="ring-fill" cx="40" cy="40" r="33"
+            stroke-dasharray="207.3"
+            stroke-dashoffset="55" id="ring-fill"/>
+        </svg>
+        <div class="ring-label">
+          <span class="ring-score" id="ring-score">73</span>
+          <span class="ring-sub">/ 100</span>
+        </div>
+      </div>
+      <div class="readiness-info">
+        <p class="readiness-title">Good to Train 💪</p>
+        <p class="readiness-desc">Your body signals look solid. A moderate session is ideal today.</p>
+        <div class="readiness-tags">
+          <span class="readiness-tag">Stress Low ✓</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TODAY'S PROGRESS ── -->
+  <div class="card" id="today-card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+      <span class="section-label" style="margin-bottom:0;">Today's Progress</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="edit-btn" id="edit-workout-btn" onclick="openWorkoutEdit()" style="display:none;"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>
+        <span style="font-size:12px; font-weight:700; color:var(--primary);" id="progress-count"></span>
+      </div>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:12px;" id="progress-sub">Complete your morning check-in to see today's plan.</p>
+
+    <!-- Overall progress bar -->
+    <div style="height:6px; border-radius:9999px; background:var(--border); overflow:hidden; margin-bottom:14px;">
+      <div id="today-progress-bar" style="width:0%; height:100%; border-radius:9999px; background:var(--primary); transition:width 0.6s ease;"></div>
     </div>
 
-    <div class="h-3 w-full rounded-full bg-[#3a2a1d] overflow-hidden">
-      <div class="h-full bg-[var(--primary)]" style="width: 48%"></div>
+    <!-- Activity list (populated after plan confirmed) -->
+    <div id="today-activities" style="display:flex; flex-direction:column; gap:10px;">
+      <div style="text-align:center; padding:20px 0;">
+        <p style="font-size:13px; color:var(--muted);">Your plan will appear here after check-in.</p>
+      </div>
     </div>
 
-    <div class="grid grid-cols-4 text-[11px] text-[var(--muted)] font-semibold">
+    <div id="today-footer" style="display:none;">
+      <div style="height:1px; background:var(--border); margin:14px 0;"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px; color:var(--muted);" id="kcal-summary">0 kcal burned today</span>
+        <button onclick="requestPivot()" style="font-size:12px; font-weight:600; color:var(--muted); background:none; border:none; cursor:pointer; font-family:inherit;">Pivot plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── VOICE / INVISIBLE LOG ── -->
+  <div class="card">
+    <span class="section-label">Log a Workout</span>
+    <textarea class="voice-input" id="voice-input" placeholder="e.g. I did 30 mins of yoga this morning…"></textarea>
+    <div class="voice-actions">
+      <button class="btn-mic" id="btn-mic" onclick="toggleMic()">
+        🎙 Dictate
+      </button>
+      <button class="btn-parse" onclick="parseLog()">Parse & Log</button>
+    </div>
+    <div id="log-result" style="display:none; margin-top:10px; font-size:13px; font-weight:600; color:var(--green);">
+      ✓ Logged: 30 mins of Yoga
+    </div>
+  </div>
+
+</div><!-- /page-home -->
+
+<!-- ════ NUTRITION PAGE ════ -->
+<div class="shell" id="page-nutrition" style="display:none;">
+
+  <div class="card header">
+    <div class="header-left">
+      <p class="section-label">Alto</p>
+      <h1 class="header-greeting">Nutrition 🥗</h1>
+      <p class="header-sub">Today's fuel overview.</p>
+    </div>
+  </div>
+
+  <!-- Calories ring -->
+  <div class="card">
+    <span class="section-label">Calories Today</span>
+    <div class="cal-ring-wrap">
+      <div class="cal-ring">
+        <svg width="90" height="90" viewBox="0 0 90 90">
+          <circle fill="none" stroke="var(--border)" stroke-width="8" cx="45" cy="45" r="37"/>
+          <circle fill="none" stroke="var(--primary)" stroke-width="8" stroke-linecap="round"
+            cx="45" cy="45" r="37"
+            stroke-dasharray="232.5"
+            stroke-dashoffset="72"
+            transform="rotate(-90 45 45)"/>
+        </svg>
+        <div class="cal-ring-label">
+          <span class="cal-ring-val">1,420</span>
+          <span class="cal-ring-unit">kcal</span>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="cal-goal-row">
+          <div class="cal-stat">
+            <div class="cal-stat-val">2,100</div>
+            <div class="cal-stat-label">Goal</div>
+          </div>
+          <div class="cal-stat">
+            <div class="cal-stat-val" style="color:var(--green);">680</div>
+            <div class="cal-stat-label">Remaining</div>
+          </div>
+          <div class="cal-stat">
+            <div class="cal-stat-val" style="color:var(--red);">312</div>
+            <div class="cal-stat-label">Burned</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="macro-row">
+      <div class="macro-line">
+        <div class="macro-line-header">
+          <span class="macro-line-name">Protein</span>
+          <span class="macro-line-vals">112g / 150g</span>
+        </div>
+        <div class="macro-bar"><div class="macro-fill protein" style="width:75%"></div></div>
+      </div>
+      <div class="macro-line">
+        <div class="macro-line-header">
+          <span class="macro-line-name">Carbohydrates</span>
+          <span class="macro-line-vals">148g / 200g</span>
+        </div>
+        <div class="macro-bar"><div class="macro-fill carbs" style="width:74%"></div></div>
+      </div>
+      <div class="macro-line">
+        <div class="macro-line-header">
+          <span class="macro-line-name">Fat</span>
+          <span class="macro-line-vals">44g / 65g</span>
+        </div>
+        <div class="macro-bar"><div class="macro-fill fat" style="width:68%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meals -->
+  <div class="card">
+    <span class="section-label">Meals Logged</span>
+    <div class="meal-list">
+      <div class="meal-row">
+        <span class="meal-icon">🌅</span>
+        <div class="meal-info">
+          <p class="meal-name">Breakfast</p>
+          <p class="meal-items">Oats, banana, almond milk</p>
+        </div>
+        <span class="meal-kcal">410 kcal</span>
+      </div>
+      <div class="meal-row">
+        <span class="meal-icon">☀️</span>
+        <div class="meal-info">
+          <p class="meal-name">Lunch</p>
+          <p class="meal-items">Grilled chicken, brown rice, salad</p>
+        </div>
+        <span class="meal-kcal">620 kcal</span>
+      </div>
+      <div class="meal-row">
+        <span class="meal-icon">🌙</span>
+        <div class="meal-info">
+          <p class="meal-name">Snack</p>
+          <p class="meal-items">Greek yogurt, berries</p>
+        </div>
+        <span class="meal-kcal">180 kcal</span>
+      </div>
+      <div class="meal-row" style="border: 1.5px dashed var(--border); background:transparent;">
+        <span class="meal-icon">🍽️</span>
+        <div class="meal-info">
+          <p class="meal-name" style="color:var(--muted);">Dinner — not logged yet</p>
+        </div>
+        <span class="meal-kcal" style="color:var(--muted);">+ Add</span>
+      </div>
+    </div>
+    <button class="btn-log-meal" style="margin-top:14px;">
+      📷 Log a meal photo
+    </button>
+  </div>
+
+  <!-- Water -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <span class="section-label" style="margin-bottom:0;">Water Intake</span>
+      <span style="font-size:13px; font-weight:700; color:var(--primary);">1.8L / 2.5L</span>
+    </div>
+    <div class="macro-bar" style="height:10px;">
+      <div class="macro-fill" style="width:72%; background:var(--blue);"></div>
+    </div>
+    <p style="font-size:12px; color:var(--muted); margin-top:8px;">700ml remaining to hit your goal.</p>
+  </div>
+
+</div><!-- /page-nutrition -->
+
+<!-- ════ GOALS PAGE ════ -->
+<div class="shell" id="page-goals" style="display:none;">
+
+  <div class="card header">
+    <div class="header-left">
+      <p class="section-label">Alto</p>
+      <h1 class="header-greeting">Goals 🎯</h1>
+      <p class="header-sub">Your training roadmap.</p>
+    </div>
+  </div>
+
+  <!-- Goal 1 -->
+  <div class="goal-card">
+    <div class="goal-card-header">
+      <span class="goal-card-emoji">🏅</span>
+      <div class="goal-card-info">
+        <p class="goal-card-name">July Marathon</p>
+        <p class="goal-card-date">📅 Jul 15, 2026 · 1 month away</p>
+      </div>
+      <span style="font-size:11px; font-weight:700; color:var(--red); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.25); border-radius:9999px; padding:3px 10px;">Soon</span>
+    </div>
+
+    <div class="goal-stat-row">
+      <div class="goal-stat">
+        <div class="goal-stat-val">48%</div>
+        <div class="goal-stat-label">Complete</div>
+      </div>
+      <div class="goal-stat">
+        <div class="goal-stat-val">24</div>
+        <div class="goal-stat-label">Sessions Done</div>
+      </div>
+      <div class="goal-stat">
+        <div class="goal-stat-val">4</div>
+        <div class="goal-stat-label">Weeks Left</div>
+      </div>
+    </div>
+
+    <span class="section-label">Training Phase</span>
+    <div class="progress-bar" style="margin-bottom:8px;">
+      <div class="progress-fill" style="width:48%"></div>
+    </div>
+    <div class="phase-row">
       <span>Base</span>
-      <span class="text-[var(--primary)]">Build</span>
+      <span class="active-phase">Build ◀</span>
       <span>Peak</span>
       <span>Taper</span>
     </div>
 
-    <p class="text-xs text-[var(--muted)]">You are 48% through your current roadmap phase.</p>
-  </section>
+    <div class="divider"></div>
+    <p style="font-size:12px; color:var(--muted); line-height:1.6;">
+      ⚡ This week: 3 runs planned — Tempo, Easy, Long Run. Taper begins in 3 weeks.
+    </p>
+  </div>
 
-  <script>
-    const moodButtons = document.querySelectorAll('.mood');
-    const moodText = document.getElementById('moodText');
+  <!-- Goal 2 -->
+  <div class="goal-card">
+    <div class="goal-card-header">
+      <span class="goal-card-emoji">⚡</span>
+      <div class="goal-card-info">
+        <p class="goal-card-name">Hyrox 2026</p>
+        <p class="goal-card-date">📅 Aug 30, 2026 · 5 months away</p>
+      </div>
+      <span style="font-size:11px; font-weight:700; color:var(--primary); background:var(--primary-dim); border:1px solid rgba(244,140,37,0.25); border-radius:9999px; padding:3px 10px;">On Track</span>
+    </div>
 
-    moodButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        moodButtons.forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        moodText.textContent = `Selected: ${btn.dataset.mood}`;
+    <div class="goal-stat-row">
+      <div class="goal-stat">
+        <div class="goal-stat-val">18%</div>
+        <div class="goal-stat-label">Complete</div>
+      </div>
+      <div class="goal-stat">
+        <div class="goal-stat-val">8</div>
+        <div class="goal-stat-label">Sessions Done</div>
+      </div>
+      <div class="goal-stat">
+        <div class="goal-stat-val">20</div>
+        <div class="goal-stat-label">Weeks Left</div>
+      </div>
+    </div>
+
+    <span class="section-label">Training Phase</span>
+    <div class="progress-bar" style="margin-bottom:8px;">
+      <div class="progress-fill" style="width:18%"></div>
+    </div>
+    <div class="phase-row">
+      <span class="active-phase">Base ◀</span>
+      <span>Build</span>
+      <span>Peak</span>
+      <span>Taper</span>
+    </div>
+
+    <div class="divider"></div>
+    <p style="font-size:12px; color:var(--muted); line-height:1.6;">
+      🏋️ This week: Strength + Functional training. Focus on sled push and rowing endurance.
+    </p>
+  </div>
+
+  <!-- Add goal CTA -->
+  <button style="
+    width:100%; padding:14px; border-radius:14px;
+    border: 1.5px dashed var(--border); background:transparent;
+    color:var(--muted); font-family:inherit; font-size:14px; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+  " onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'"
+     onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">
+    + Add a New Goal
+  </button>
+
+</div><!-- /page-goals -->
+
+<!-- ════ PROFILE PAGE ════ -->
+<div class="shell" id="page-profile" style="display:none;">
+
+  <div class="card">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar">🧑</div>
+      <p class="profile-name">Komal Shete</p>
+      <p class="profile-handle">Training since Jan 2026</p>
+    </div>
+    <div class="stat-chips">
+      <div class="stat-chip"><span class="stat-chip-label">Age</span> 28</div>
+      <div class="stat-chip"><span class="stat-chip-label">Height</span> 5.4 ft</div>
+      <div class="stat-chip"><span class="stat-chip-label">Weight</span> 62 kg</div>
+      <div class="stat-chip"><span class="stat-chip-label">Level</span> Moderately Active</div>
+    </div>
+  </div>
+
+  <!-- Health -->
+  <div class="card">
+    <span class="section-label">Health Profile</span>
+    <div class="setting-group">
+      <div class="setting-row">
+        <span class="setting-icon">🫁</span>
+        <span class="setting-label">Health Conditions</span>
+        <span class="setting-value">Asthma</span>
+        <span class="setting-chevron">›</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-icon">🏃</span>
+        <span class="setting-label">Preferred Workouts</span>
+        <span class="setting-value">Running, Strength</span>
+        <span class="setting-chevron">›</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-icon">📆</span>
+        <span class="setting-label">Activity Frequency</span>
+        <span class="setting-value">4× / week</span>
+        <span class="setting-chevron">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connected Apps -->
+  <div class="card">
+    <span class="section-label">Connected Apps</span>
+    <div class="setting-group">
+      <div class="setting-row">
+        <span class="setting-icon">❤️</span>
+        <span class="setting-label">Apple HealthKit</span>
+        <span style="font-size:11px; font-weight:700; color:var(--green); background:var(--green-dim); border:1px solid rgba(74,222,128,0.3); border-radius:9999px; padding:3px 9px;">Connected</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-icon">⌚</span>
+        <span class="setting-label">Apple Watch</span>
+        <span style="font-size:11px; font-weight:700; color:var(--green); background:var(--green-dim); border:1px solid rgba(74,222,128,0.3); border-radius:9999px; padding:3px 9px;">Connected</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <span class="section-label">Settings</span>
+    <div class="setting-group">
+      <div class="setting-row">
+        <span class="setting-icon">🔔</span>
+        <span class="setting-label">Notifications</span>
+        <span class="setting-value">On</span>
+        <span class="setting-chevron">›</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-icon">🎯</span>
+        <span class="setting-label">Daily Reminders</span>
+        <span class="setting-value">7:00 AM</span>
+        <span class="setting-chevron">›</span>
+      </div>
+      <div class="setting-row">
+        <span class="setting-icon">🔒</span>
+        <span class="setting-label">Data Privacy</span>
+        <span class="setting-chevron">›</span>
+      </div>
+      <div class="setting-row" style="cursor:pointer;" onclick="this.style.color='var(--red)'">
+        <span class="setting-icon">🚪</span>
+        <span class="setting-label" style="color:var(--red);">Sign Out</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-profile -->
+
+<!-- ════ BOTTOM NAV ════ -->
+<nav class="bottom-nav">
+  <button class="nav-tab active" id="tab-home" onclick="switchTab('home')">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
+    <span class="nav-label">Home</span>
+  </button>
+  <button class="nav-tab" id="tab-nutrition" onclick="switchTab('nutrition')">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 1 5 5c0 3.5-2 6-5 7C9 13 7 10.5 7 7a5 5 0 0 1 5-5z"/><path d="M12 14v8"/><path d="M9 19h6"/></svg></span>
+    <span class="nav-label">Nutrition</span>
+  </button>
+  <button class="nav-tab" id="tab-goals" onclick="switchTab('goals')">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" style="fill:currentColor;stroke:none"/><path d="M12 3V1M12 23v-2M3 12H1M23 12h-2"/></svg></span>
+    <span class="nav-label">Goals</span>
+  </button>
+  <button class="nav-tab" id="tab-profile" onclick="switchTab('profile')">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+    <span class="nav-label">Profile</span>
+  </button>
+</nav>
+
+<!-- ════ GOALS EDIT MODAL ════ -->
+<div class="modal-overlay" id="goals-modal" style="display:none;" onclick="if(event.target===this)closeGoalsEdit()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <p class="modal-title">Edit Goals</p>
+    <p class="modal-sub">Add or remove goals. Changes reflect across the app.</p>
+    <div id="goals-edit-list"></div>
+    <div class="add-goal-form">
+      <p style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:2px;">Add a goal</p>
+      <div class="modal-row">
+        <input class="modal-input" id="new-goal-emoji" placeholder="🏅" style="width:52px;flex-shrink:0;text-align:center;" maxlength="2"/>
+        <input class="modal-input" id="new-goal-name" placeholder="Goal name (e.g. Half Marathon)" style="flex:1;"/>
+      </div>
+      <div class="modal-row">
+        <input class="modal-input" id="new-goal-date" placeholder="Target date (e.g. Oct 12, 2026)" style="flex:1;"/>
+        <button class="btn-modal-add" style="width:auto;padding:10px 16px;" onclick="addGoal()">Add</button>
+      </div>
+    </div>
+    <button class="btn-modal-save" onclick="closeGoalsEdit()">Done</button>
+  </div>
+</div>
+
+<!-- ════ WORKOUT EDIT MODAL ════ -->
+<div class="modal-overlay" id="workout-modal" style="display:none;" onclick="if(event.target===this)closeWorkoutEdit()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <p class="modal-title">Edit Today's Plan</p>
+    <p class="modal-sub">Add or remove activities for today.</p>
+
+    <div id="workout-edit-list" style="margin-bottom:14px;"></div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">add activity</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+
+    <div class="act-type-row" id="edit-act-types">
+      <button class="act-type-btn" onclick="editPickType(this,'Hike')"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 17l4-9 3 5 3-3 4 6"/><circle cx="17" cy="4" r="2"/></svg>Hike</button>
+      <button class="act-type-btn" onclick="editPickType(this,'Run')"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="m8 18 1.5-5L12 15l2-6 2.5 4H20"/><path d="M4 19h4"/></svg>Run</button>
+      <button class="act-type-btn" onclick="editPickType(this,'Strength')"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M6.5 6.5h11M6.5 6.5V17M17.5 6.5V17M4 9h3M17 9h3M4 14h3M17 14h3"/></svg>Strength</button>
+      <button class="act-type-btn" onclick="editPickType(this,'Yoga')"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="5" r="2"/><path d="m12 7-4 7h8l-4-7"/><path d="m8 14-3 5h14l-3-5"/></svg>Yoga</button>
+      <button class="act-type-btn" onclick="editPickType(this,'Other')"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Other</button>
+    </div>
+
+    <div class="custom-add-row">
+      <input class="custom-input" id="edit-custom-name" placeholder="e.g. Pilates" />
+      <input class="dur-input" id="edit-custom-dur" placeholder="45 m" />
+      <button class="btn-add-sm" onclick="addEditActivity()">Add</button>
+    </div>
+
+    <!-- Calorie check in edit modal -->
+    <div class="cal-banner warn" id="edit-cal-banner" style="display:none;">
+      <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:#fbbf24;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div class="cal-banner-body">
+        <div class="cal-banner-title" id="edit-cal-title" style="color:#fbbf24;">Plan may not hit your calorie goal</div>
+        <div class="cal-banner-sub" id="edit-cal-sub"></div>
+        <div class="cal-banner-chips" id="edit-cal-chips"></div>
+      </div>
+    </div>
+
+    <button class="btn-modal-save" onclick="saveWorkoutEdit()">Save Plan</button>
+  </div>
+</div>
+
+<script>
+  /* ══════════════════════════════════
+     GOALS DATA (shared between pages)
+  ══════════════════════════════════ */
+  let goals = [
+    { id: 1, emoji: '🏅', name: 'Marathon', date: 'Jul 15, 2026', daysAway: 30,  status: 'Soon',     statusColor: 'var(--red)',     statusBg: 'rgba(248,113,113,0.1)', statusBorder: 'rgba(248,113,113,0.25)' },
+    { id: 2, emoji: '⚡',  name: 'Hyrox',    date: 'Aug 30, 2026', daysAway: 153, status: 'On Track', statusColor: 'var(--primary)', statusBg: 'var(--primary-dim)',     statusBorder: 'rgba(244,140,37,0.25)' },
+  ];
+  let nextGoalId = 3;
+
+  function renderGoals() {
+    // Dashboard card
+    const dash = document.getElementById('dashboard-goals-list');
+    if (dash) {
+      if (goals.length === 0) {
+        dash.innerHTML = '<p style="font-size:13px;color:var(--muted);text-align:center;padding:12px 0;">No goals yet — add one below.</p>';
+      } else {
+        dash.innerHTML = goals.map((g, i) => `
+          ${i > 0 ? '<div style="height:1px;background:var(--border);"></div>' : ''}
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="font-size:20px;flex-shrink:0;">${g.emoji}</span>
+            <div style="flex:1;">
+              <p style="font-size:14px;font-weight:700;color:var(--text);">${g.name}</p>
+              <p style="font-size:12px;color:var(--muted);margin-top:1px;">${g.daysAway < 60 ? g.daysAway + ' days away' : Math.round(g.daysAway/30) + ' months away'} · ${g.date}</p>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:${g.statusColor};background:${g.statusBg};border:1px solid ${g.statusBorder};border-radius:9999px;padding:3px 10px;flex-shrink:0;">${g.status}</span>
+          </div>`).join('');
+      }
+    }
+
+    // Goals page
+    const goalPage = document.getElementById('page-goals');
+    if (goalPage) {
+      // Keep header + add button, replace goal cards
+      const existingCards = goalPage.querySelectorAll('.goal-card');
+      existingCards.forEach(c => c.remove());
+      const addBtn = goalPage.querySelector('button[style*="dashed"]');
+      const phases = ['Base','Build','Peak','Taper'];
+      goals.forEach(g => {
+        const card = document.createElement('div');
+        card.className = 'goal-card';
+        const pct = Math.round(Math.random() * 40 + 10);
+        card.innerHTML = `
+          <div class="goal-card-header">
+            <span class="goal-card-emoji">${g.emoji}</span>
+            <div class="goal-card-info"><p class="goal-card-name">${g.name}</p><p class="goal-card-date">${g.date}</p></div>
+            <span style="font-size:11px;font-weight:700;color:${g.statusColor};background:${g.statusBg};border:1px solid ${g.statusBorder};border-radius:9999px;padding:3px 10px;">${g.status}</span>
+          </div>
+          <div class="goal-stat-row">
+            <div class="goal-stat"><div class="goal-stat-val">${pct}%</div><div class="goal-stat-label">Complete</div></div>
+            <div class="goal-stat"><div class="goal-stat-val">${Math.round(pct/2)}</div><div class="goal-stat-label">Sessions</div></div>
+            <div class="goal-stat"><div class="goal-stat-val">${Math.round(g.daysAway/7)}</div><div class="goal-stat-label">Weeks Left</div></div>
+          </div>
+          <span class="section-label">Training Phase</span>
+          <div class="progress-bar" style="margin-bottom:8px;"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div class="phase-row"><span class="active-phase">Build ◀</span><span>Peak</span><span>Taper</span></div>`;
+        if (addBtn) goalPage.insertBefore(card, addBtn);
+        else goalPage.appendChild(card);
       });
-    });
+    }
+  }
 
-    const profileUpload = document.getElementById('profileUpload');
-    const profilePreview = document.getElementById('profilePreview');
-
-    profileUpload.addEventListener('change', (event) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        profilePreview.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+  /* ── Goals Edit Modal ── */
+  function openGoalsEdit() {
+    const modal = document.getElementById('goals-modal');
+    modal.style.display = 'flex';
+    renderGoalsEditList();
+  }
+  function closeGoalsEdit() {
+    const modal = document.getElementById('goals-modal');
+    modal.classList.add('hiding');
+    setTimeout(() => { modal.style.display = 'none'; modal.classList.remove('hiding'); }, 250);
+    renderGoals();
+  }
+  function renderGoalsEditList() {
+    const el = document.getElementById('goals-edit-list');
+    el.innerHTML = goals.map((g, i) => `
+      <div class="goal-edit-row">
+        <span class="goal-edit-emoji">${g.emoji}</span>
+        <div class="goal-edit-info">
+          <div class="goal-edit-name">${g.name}</div>
+          <div class="goal-edit-date">${g.date}</div>
+        </div>
+        <button class="goal-rm-btn" onclick="removeGoal(${g.id})">×</button>
+      </div>`).join('') || '<p style="font-size:13px;color:var(--muted);text-align:center;padding:8px 0;">No goals yet.</p>';
+  }
+  function removeGoal(id) {
+    goals = goals.filter(g => g.id !== id);
+    renderGoalsEditList();
+  }
+  function addGoal() {
+    const emoji = document.getElementById('new-goal-emoji').value.trim() || '🎯';
+    const name  = document.getElementById('new-goal-name').value.trim();
+    const date  = document.getElementById('new-goal-date').value.trim();
+    if (!name) { document.getElementById('new-goal-name').focus(); return; }
+    goals.push({
+      id: nextGoalId++, emoji, name,
+      date: date || 'TBD',
+      daysAway: 120,
+      status: 'On Track',
+      statusColor: 'var(--primary)', statusBg: 'var(--primary-dim)', statusBorder: 'rgba(244,140,37,0.25)'
     });
-  </script>
+    document.getElementById('new-goal-emoji').value = '';
+    document.getElementById('new-goal-name').value  = '';
+    document.getElementById('new-goal-date').value  = '';
+    renderGoalsEditList();
+  }
+
+  /* ══════════════════════════════════
+     CALORIE ESTIMATION
+  ══════════════════════════════════ */
+  const CALORIE_TARGET = 350;
+  const kcalPerMin = {
+    pilates:6, yoga:2.5, meditation:1, stretch:2,
+    run:9, running:9, tempo:10, 'easy run':8, jog:7,
+    hike:6, hiking:6, walk:4, walking:4,
+    cycle:8, cycling:8, bike:8,
+    swim:7, swimming:7,
+    strength:5, 'strength session':5, weights:5, 'weight training':5,
+    hiit:12, crossfit:11, 'circuit training':10,
+    dance:5, boxing:9, kickboxing:9,
+    other:5
+  };
+  const suggestions = [
+    { label: '+ 20 min run', name: 'Easy Run', dur: '20 min', kcal: 180 },
+    { label: '+ 30 min HIIT', name: 'HIIT', dur: '30 min', kcal: 360 },
+    { label: '+ 45 min hike', name: 'Hike', dur: '45 min', kcal: 270 },
+    { label: '+ 30 min strength', name: 'Strength Session', dur: '30 min', kcal: 150 },
+    { label: '+ 20 min cycle', name: 'Cycle', dur: '20 min', kcal: 160 },
+  ];
+
+  function parseDuration(str) {
+    if (!str || str === '—') return 30;
+    const h = parseFloat((str.match(/(\d+(?:\.\d+)?)\s*h/) || [0,0])[1]);
+    const m = parseFloat((str.match(/(\d+)\s*m/) || [0,0])[1]);
+    if (h || m) return h * 60 + m;
+    const n = parseFloat(str);
+    return isNaN(n) ? 30 : n;
+  }
+  function estimateKcal(name, durStr) {
+    const mins = parseDuration(durStr);
+    const lower = name.toLowerCase();
+    const rate = Object.entries(kcalPerMin).find(([k]) => lower.includes(k))?.[1] ?? 5;
+    return Math.round(rate * mins);
+  }
+  function totalPlanKcal(items) {
+    return items.reduce((sum, item) => sum + estimateKcal(item.name, item.dur), 0);
+  }
+
+  function updateCalBanner(items, bannerEl, titleEl, subEl, chipsEl, onChipClick) {
+    const total = totalPlanKcal(items);
+    const gap   = CALORIE_TARGET - total;
+    if (total === 0) { bannerEl.style.display = 'none'; return; }
+    bannerEl.style.display = 'flex';
+    if (gap <= 0) {
+      bannerEl.className = 'cal-banner ok';
+      titleEl.textContent = `Plan looks great — ~${total} kcal`;
+      subEl.textContent   = `You'll hit your ${CALORIE_TARGET} kcal burn goal.`;
+      chipsEl.innerHTML   = '';
+      titleEl.style.color = 'var(--green)';
+    } else {
+      bannerEl.className = 'cal-banner warn';
+      titleEl.textContent = `~${total} kcal · ${gap} kcal short of goal`;
+      subEl.textContent   = `Your plan burns ~${total} kcal. Goal: ${CALORIE_TARGET} kcal. Add one of these:`;
+      titleEl.style.color = '#fbbf24';
+      const chips = suggestions.filter(s => estimateKcal(s.name, s.dur) >= gap * 0.5).slice(0, 3);
+      chipsEl.innerHTML = chips.map(s =>
+        `<button class="cal-suggest-chip" onclick='${onChipClick}(${JSON.stringify(s)})'>${s.label}</button>`
+      ).join('');
+    }
+  }
+
+  /* ══════════════════════════════════
+     SENTINEL — step 1: segmented bars
+  ══════════════════════════════════ */
+  const sentinel = { soreness: 0, stress: 0, motivation: 0 };
+  const labels = {
+    soreness:   ['None','Slightly sore','Moderately sore','Very sore','Extremely sore'],
+    stress:     ['None','Manageable','Noticeable','High','Overwhelmed'],
+    motivation: ['None','Low','Moderate','Feeling pumped','Unstoppable']
+  };
+  const scoreIds = { soreness:'s-score', stress:'st-score', motivation:'m-score' };
+  const descIds  = { soreness:'s-desc',  stress:'st-desc',  motivation:'m-desc'  };
+  const segColors = ['dim1','dim2','dim3','dim4','dim5'];
+
+  function tapSeg(key, tapped) { setSegValue(key, sentinel[key] === tapped ? 0 : tapped); }
+  function setSegValue(key, val) {
+    sentinel[key] = val;
+    document.querySelectorAll('#seg-' + key + ' .seg').forEach((seg, i) => {
+      seg.className = 'seg';
+      if (i < val) seg.classList.add('lit', segColors[i]);
+    });
+    document.getElementById(scoreIds[key]).textContent = val + ' / 5';
+    document.getElementById(descIds[key]).textContent  = val === 0 ? '—' : labels[key][val - 1];
+  }
+
+  function submitSentinel() {
+    const sorenessScore   = ((5 - sentinel.soreness)   / 5) * 100;
+    const stressScore     = ((5 - sentinel.stress)     / 5) * 100;
+    const motivationScore = (sentinel.motivation        / 5) * 100;
+    const raw = sorenessScore * 0.50 + stressScore * 0.30 + motivationScore * 0.20;
+    readinessScore = Math.round(Math.min(100, Math.max(10, raw)));
+
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('dot-1').classList.replace('active','done');
+    document.getElementById('dot-2').classList.add('active');
+    document.getElementById('step-label').textContent = 'STEP 2 OF 2';
+
+    const num = document.getElementById('score-banner-num');
+    num.textContent = readinessScore;
+    num.style.color = readinessScore >= 70 ? 'var(--green)' : readinessScore >= 45 ? 'var(--primary)' : 'var(--red)';
+    document.getElementById('score-banner-lbl').textContent =
+      readinessScore >= 80 ? 'Peak Readiness — push hard today' :
+      readinessScore >= 60 ? 'Good to Train — moderate session ideal' :
+      readinessScore >= 40 ? 'Train Light — consider easier session' :
+                             'Rest Day — recovery is training too';
+
+    planItems = [{ name: 'Tempo Run', dur: '45 min', icon: '🏃' }];
+    renderPlanList();
+    updateCalBanner(planItems,
+      document.getElementById('cal-banner'),
+      document.getElementById('cal-banner-title'),
+      document.getElementById('cal-banner-sub'),
+      document.getElementById('cal-suggest-chips'),
+      'addSuggestedActivity');
+  }
+
+  /* ══════════════════════════════════
+     SENTINEL — step 2: plan builder
+  ══════════════════════════════════ */
+  let readinessScore = 0;
+  let planItems = [];
+  let selectedType = '';
+
+  function toggleChip(btn, name, dur) {
+    const isOn = btn.classList.toggle('on');
+    if (isOn) { if (!planItems.find(i => i.name === name)) planItems.push({ name, dur, icon: chipIcon(name) }); }
+    else       { planItems = planItems.filter(i => i.name !== name); }
+    renderPlanList();
+    refreshCalBanner();
+  }
+  function pickType(btn, type) {
+    document.querySelectorAll('#act-types .act-type-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    selectedType = type;
+    const ph = { Hike:'e.g. 6 mile hike in Marin', Run:'e.g. Easy 5k', Cycle:'e.g. 20 mile ride', Swim:'e.g. 1000m pool swim', Other:'Describe your workout…' };
+    document.getElementById('custom-name').placeholder = ph[type] || 'Describe your workout…';
+    document.getElementById('custom-name').focus();
+  }
+  function addCustomActivity() {
+    const name = document.getElementById('custom-name').value.trim();
+    const dur  = document.getElementById('custom-dur').value.trim() || '30 min';
+    if (!name) { document.getElementById('custom-name').focus(); return; }
+    const label = selectedType ? selectedType + ': ' + name : name;
+    planItems.push({ name: label, dur, icon: typeIcon(selectedType) });
+    document.getElementById('custom-name').value = '';
+    document.getElementById('custom-dur').value  = '';
+    selectedType = '';
+    document.querySelectorAll('#act-types .act-type-btn').forEach(b => b.classList.remove('on'));
+    renderPlanList();
+    refreshCalBanner();
+  }
+  function addSuggestedActivity(s) {
+    if (typeof s === 'string') s = JSON.parse(s);
+    planItems.push({ name: s.name, dur: s.dur, icon: chipIcon(s.name) });
+    renderPlanList();
+    refreshCalBanner();
+  }
+  function removePlanItem(idx) {
+    planItems.splice(idx, 1);
+    renderPlanList();
+    refreshCalBanner();
+  }
+  function refreshCalBanner() {
+    updateCalBanner(planItems,
+      document.getElementById('cal-banner'),
+      document.getElementById('cal-banner-title'),
+      document.getElementById('cal-banner-sub'),
+      document.getElementById('cal-suggest-chips'),
+      'addSuggestedActivity');
+  }
+  function renderPlanList() {
+    const list = document.getElementById('plan-list');
+    if (!list) return;
+    if (planItems.length === 0) {
+      list.innerHTML = '<p class="plan-empty">No activities yet — tap suggestions or add your own.</p>';
+    } else {
+      list.innerHTML = planItems.map((item, i) => `
+        <div class="plan-item">
+          <span style="font-size:16px;flex-shrink:0;">${item.icon}</span>
+          <span class="plan-item-name">${item.name}</span>
+          <span class="plan-item-dur">${item.dur} · ~${estimateKcal(item.name, item.dur)} kcal</span>
+          <button class="plan-item-rm" onclick="removePlanItem(${i})">×</button>
+        </div>`).join('');
+    }
+  }
+
+  function confirmPlan() {
+    const overlay = document.getElementById('sentinel-overlay');
+    overlay.classList.add('hiding');
+    setTimeout(() => overlay.remove(), 300);
+    updateReadinessRing(readinessScore);
+    buildTodayCard();
+    document.getElementById('edit-workout-btn').style.display = 'inline-flex';
+  }
+
+  /* ══════════════════════════════════
+     WORKOUT EDIT MODAL
+  ══════════════════════════════════ */
+  let editSelectedType = '';
+
+  function openWorkoutEdit() {
+    document.getElementById('workout-modal').style.display = 'flex';
+    renderWorkoutEditList();
+    refreshEditCalBanner();
+  }
+  function closeWorkoutEdit() {
+    const modal = document.getElementById('workout-modal');
+    modal.classList.add('hiding');
+    setTimeout(() => { modal.style.display = 'none'; modal.classList.remove('hiding'); }, 250);
+  }
+  function saveWorkoutEdit() {
+    closeWorkoutEdit();
+    buildTodayCard();
+  }
+  function renderWorkoutEditList() {
+    const el = document.getElementById('workout-edit-list');
+    if (!el) return;
+    el.innerHTML = planItems.length === 0
+      ? '<p style="font-size:13px;color:var(--muted);text-align:center;padding:8px 0;">No activities yet.</p>'
+      : planItems.map((item, i) => `
+          <div class="goal-edit-row">
+            <span class="goal-edit-emoji">${item.icon}</span>
+            <div class="goal-edit-info">
+              <div class="goal-edit-name">${item.name}</div>
+              <div class="goal-edit-date">${item.dur} · ~${estimateKcal(item.name, item.dur)} kcal</div>
+            </div>
+            <button class="goal-rm-btn" onclick="removeEditActivity(${i})">×</button>
+          </div>`).join('');
+  }
+  function removeEditActivity(idx) {
+    planItems.splice(idx, 1);
+    renderWorkoutEditList();
+    refreshEditCalBanner();
+  }
+  function editPickType(btn, type) {
+    document.querySelectorAll('#edit-act-types .act-type-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    editSelectedType = type;
+    document.getElementById('edit-custom-name').placeholder = { Hike:'e.g. 6 mile hike', Run:'e.g. Easy 5k', Strength:'e.g. Upper body', Yoga:'e.g. Vinyasa flow', Other:'Describe…' }[type] || 'Describe…';
+    document.getElementById('edit-custom-name').focus();
+  }
+  function addEditActivity() {
+    const name = document.getElementById('edit-custom-name').value.trim();
+    const dur  = document.getElementById('edit-custom-dur').value.trim() || '30 min';
+    if (!name) { document.getElementById('edit-custom-name').focus(); return; }
+    const label = editSelectedType ? editSelectedType + ': ' + name : name;
+    planItems.push({ name: label, dur, icon: typeIcon(editSelectedType) });
+    document.getElementById('edit-custom-name').value = '';
+    document.getElementById('edit-custom-dur').value  = '';
+    editSelectedType = '';
+    document.querySelectorAll('#edit-act-types .act-type-btn').forEach(b => b.classList.remove('on'));
+    renderWorkoutEditList();
+    refreshEditCalBanner();
+  }
+  function addEditSuggested(s) {
+    if (typeof s === 'string') s = JSON.parse(s);
+    planItems.push({ name: s.name, dur: s.dur, icon: chipIcon(s.name) });
+    renderWorkoutEditList();
+    refreshEditCalBanner();
+  }
+  function refreshEditCalBanner() {
+    updateCalBanner(planItems,
+      document.getElementById('edit-cal-banner'),
+      document.getElementById('edit-cal-title'),
+      document.getElementById('edit-cal-sub'),
+      document.getElementById('edit-cal-chips'),
+      'addEditSuggested');
+  }
+
+  /* ══════════════════════════════════
+     TODAY'S CARD
+  ══════════════════════════════════ */
+  let doneCount = 0;
+  function buildTodayCard() {
+    doneCount = 0;
+    const actEl   = document.getElementById('today-activities');
+    const countEl = document.getElementById('progress-count');
+    const subEl   = document.getElementById('progress-sub');
+    document.getElementById('today-footer').style.display = 'block';
+    document.getElementById('today-progress-bar').style.width = '0%';
+
+    subEl.textContent   = 'Planned for today · Marathon training';
+    countEl.textContent = '0 of ' + planItems.length + ' done';
+
+    const totalKcal = totalPlanKcal(planItems);
+    document.getElementById('kcal-summary').textContent = `0 / ${totalKcal} kcal burned today`;
+
+    actEl.innerHTML = planItems.map((item, i) => {
+      const isFirst = i === 0;
+      return `
+        <div id="act-row-${i}" style="display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:12px;
+          background:${isFirst ? 'var(--primary-dim)' : 'var(--surface)'};
+          border:1px solid ${isFirst ? 'rgba(244,140,37,0.3)' : 'var(--border)'};">
+          <span style="font-size:20px;flex-shrink:0;${isFirst ? '' : 'opacity:0.5'}">${item.icon}</span>
+          <div style="flex:1;">
+            <p style="font-size:14px;font-weight:700;color:${isFirst ? 'var(--text)' : 'var(--muted)'};">${item.name}</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:2px;">${item.dur} · ~${estimateKcal(item.name, item.dur)} kcal</p>
+          </div>
+          ${isFirst
+            ? `<button onclick="completeActivity(${i})" style="font-size:11px;font-weight:700;color:#1a1108;background:var(--primary);border:none;border-radius:9999px;padding:5px 12px;flex-shrink:0;cursor:pointer;font-family:inherit;">Start</button>`
+            : `<span style="font-size:11px;font-weight:600;color:var(--muted);flex-shrink:0;">Later</span>`
+          }
+        </div>`;
+    }).join('');
+  }
+
+  function completeActivity(idx) {
+    const row = document.getElementById('act-row-' + idx);
+    row.style.background = 'rgba(74,222,128,0.06)';
+    row.style.border = '1px solid rgba(74,222,128,0.2)';
+    const btn = row.querySelector('button');
+    if (btn) btn.outerHTML = '<span style="font-size:11px;font-weight:700;color:var(--green);background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:9999px;padding:3px 10px;flex-shrink:0;">Done</span>';
+    doneCount++;
+    const pct = Math.round((doneCount / planItems.length) * 100);
+    document.getElementById('today-progress-bar').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = doneCount + ' of ' + planItems.length + ' done';
+    const burned = planItems.slice(0, doneCount).reduce((s, item) => s + estimateKcal(item.name, item.dur), 0);
+    document.getElementById('kcal-summary').textContent = `${burned} / ${totalPlanKcal(planItems)} kcal burned today`;
+
+    if (idx + 1 < planItems.length) {
+      const next = document.getElementById('act-row-' + (idx + 1));
+      next.style.background = 'var(--primary-dim)';
+      next.style.border = '1px solid rgba(244,140,37,0.3)';
+      next.querySelectorAll('p')[0].style.color = 'var(--text)';
+      next.querySelector('span:last-child').outerHTML =
+        `<button onclick="completeActivity(${idx+1})" style="font-size:11px;font-weight:700;color:#1a1108;background:var(--primary);border:none;border-radius:9999px;padding:5px 12px;flex-shrink:0;cursor:pointer;font-family:inherit;">Start</button>`;
+    }
+  }
+
+  function chipIcon(name) {
+    const n = name.toLowerCase();
+    if (n.includes('run') || n.includes('tempo') || n.includes('jog')) return '🏃';
+    if (n.includes('strength') || n.includes('weight')) return '🏋️';
+    if (n.includes('hike') || n.includes('hiking')) return '🥾';
+    if (n.includes('cycle') || n.includes('bike')) return '🚴';
+    if (n.includes('swim')) return '🏊';
+    if (n.includes('yoga') || n.includes('stretch')) return '🧘';
+    if (n.includes('hiit') || n.includes('circuit')) return '⚡';
+    if (n.includes('pilates')) return '🤸';
+    return '💪';
+  }
+  function typeIcon(type) {
+    return { Hike:'🥾', Run:'🏃', Cycle:'🚴', Swim:'🏊', Strength:'🏋️', Yoga:'🧘', Other:'💪' }[type] || '💪';
+  }
+
+  /* ══════════════════════════════════
+     READINESS RING
+  ══════════════════════════════════ */
+  function updateReadinessRing(score) {
+    const circle = document.getElementById('ring-fill');
+    const circ   = 2 * Math.PI * 33;
+    circle.style.strokeDashoffset = circ - (score / 100) * circ;
+    document.getElementById('ring-score').textContent = score;
+    let title, desc, tags;
+    if (score >= 80)      { title='Peak Readiness'; desc="You're in great shape. Push hard today."; tags=['High Motivation','Low Stress','Fresh Legs']; }
+    else if (score >= 60) { title='Good to Train';  desc='Body signals look solid. A moderate session is ideal.'; tags=['Manageable Fatigue']; }
+    else if (score >= 40) { title='Train Light';    desc='Some fatigue detected. Consider a lighter session.'; tags=['Elevated Soreness','Moderate Stress']; }
+    else                  { title='Rest Day';       desc='Your body needs recovery. Alto has adjusted your plan.'; tags=['High Fatigue','Recovery Mode']; }
+    document.querySelector('.readiness-title').textContent = title;
+    document.querySelector('.readiness-desc').textContent  = desc;
+    document.querySelector('.readiness-tags').innerHTML = tags.map(t => `<span class="readiness-tag">${t}</span>`).join('');
+    circle.style.stroke = score >= 70 ? 'var(--green)' : score >= 45 ? 'var(--primary)' : 'var(--red)';
+  }
+
+  /* ── Tab switching ── */
+  function switchTab(tab) {
+    ['home','nutrition','goals','profile'].forEach(t => {
+      document.getElementById('page-' + t).style.display = t === tab ? 'flex' : 'none';
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    });
+    window.scrollTo(0, 0);
+  }
+
+  /* ── Avatar ── */
+  function previewAvatar(e) {
+    const file = e.target.files?.[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { document.querySelector('.avatar').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;"/>`; };
+    reader.readAsDataURL(file);
+  }
+
+  /* ── Voice log ── */
+  let recording = false;
+  function toggleMic() {
+    recording = !recording;
+    const btn = document.getElementById('btn-mic');
+    btn.classList.toggle('recording', recording);
+    btn.textContent = recording ? '⏹ Stop' : '🎙 Dictate';
+    if (recording) {
+      document.getElementById('voice-input').value = '';
+      setTimeout(() => { if (recording) { document.getElementById('voice-input').value = 'I did 30 mins of yoga this morning'; toggleMic(); } }, 2000);
+    }
+  }
+  function parseLog() {
+    const text = document.getElementById('voice-input').value.trim();
+    if (!text) return;
+    document.getElementById('log-result').style.display = 'block';
+    setTimeout(() => { document.getElementById('log-result').style.display = 'none'; }, 3000);
+  }
+  function requestPivot() {}
+
+  /* init */
+  window.addEventListener('load', () => {
+    const circle = document.getElementById('ring-fill');
+    circle.style.strokeDashoffset = 2 * Math.PI * 33;
+    document.getElementById('ring-score').textContent = '—';
+    document.querySelector('.readiness-title').textContent = 'Complete Check-In';
+    document.querySelector('.readiness-desc').textContent  = 'Submit your daily check-in to see your readiness score.';
+    document.querySelector('.readiness-tags').innerHTML = '';
+    renderGoals();
+  });
+</script>
 </body>
 </html>

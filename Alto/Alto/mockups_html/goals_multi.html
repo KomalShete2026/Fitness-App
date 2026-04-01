@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto – Goals (Multi)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:          #1a1108;
+      --surface:     #211609;
+      --card:        #2c1f10;
+      --border:      #4a3018;
+      --primary:     #f48c25;
+      --primary-dim: rgba(244,140,37,0.12);
+      --text:        #f0ede8;
+      --muted:       #7a7870;
+      --green:       #4ade80;
+      --green-dim:   rgba(74,222,128,0.10);
+      --blue:        #60a5fa;
+      --blue-dim:    rgba(96,165,250,0.10);
+      --purple:      #a78bfa;
+      --purple-dim:  rgba(167,139,250,0.10);
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", system-ui;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      max-width: 420px; margin: 0 auto;
+      padding: 20px 16px 0;
+    }
+    .page-header h1 { font-size: 24px; font-weight: 800; }
+    .page-header p  { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Goal switcher ── */
+    .goal-switcher {
+      max-width: 420px; margin: 0 auto;
+      padding: 14px 0 0;
+      position: relative;
+    }
+    .goal-switcher-scroll {
+      display: flex; gap: 10px;
+      overflow-x: auto; scroll-snap-type: x mandatory;
+      padding: 0 16px 4px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .goal-switcher-scroll::-webkit-scrollbar { display: none; }
+
+    .goal-chip {
+      flex-shrink: 0; scroll-snap-align: start;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px 10px 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      min-width: 160px;
+    }
+    .goal-chip.active {
+      border-color: var(--primary);
+      background: rgba(244,140,37,0.06);
+    }
+    .goal-chip:hover:not(.active) { border-color: rgba(244,140,37,0.4); }
+
+    /* Mini ring */
+    .mini-ring { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+    .mini-ring svg { transform: rotate(-90deg); }
+    .mini-ring-label {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; color: var(--text);
+    }
+    .goal-chip-info { min-width: 0; }
+    .goal-chip-name {
+      font-size: 12px; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--text);
+    }
+    .goal-chip-sub {
+      font-size: 10px; color: var(--muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .goal-chip.active .goal-chip-name { color: var(--primary); }
+
+    /* Add goal chip */
+    .goal-chip-add {
+      flex-shrink: 0; scroll-snap-align: start;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: transparent;
+      border: 1.5px dashed var(--border);
+      border-radius: 14px;
+      padding: 10px 18px;
+      cursor: pointer;
+      font-family: inherit; font-size: 12px; font-weight: 700;
+      color: var(--muted);
+      transition: border-color 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+    .goal-chip-add svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+    .goal-chip-add:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ── Journey panel ── */
+    .journey-panels {
+      max-width: 420px; margin: 0 auto;
+      padding: 14px 16px 100px;
+    }
+    .journey-panel {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      animation: fadeSlide 0.25s ease;
+    }
+    .journey-panel.active { display: flex; }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Card base ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    /* ── Overall progress card ── */
+    .progress-meta {
+      display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;
+    }
+    .progress-meta-left h2 { font-size: 16px; font-weight: 700; }
+    .progress-meta-left p  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .progress-pct { font-size: 22px; font-weight: 800; line-height: 1; margin-top: 2px; }
+
+    .progress-track {
+      position: relative; height: 12px;
+      background: var(--border); border-radius: 9999px; overflow: visible;
+      margin-bottom: 10px;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 9999px;
+      transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+    }
+    .progress-dot {
+      position: absolute; right: -7px; top: 50%;
+      transform: translateY(-50%);
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2.5px solid var(--bg);
+    }
+    .phase-ticks {
+      display: flex; justify-content: space-between;
+    }
+    .phase-tick {
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      flex: 1; text-align: center;
+    }
+    .phase-tick.active { font-weight: 800; }
+
+    /* ── Journey card ── */
+    .journey-header {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 18px;
+    }
+    .journey-header svg { width: 13px; height: 13px; stroke: var(--primary); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+    .journey-header span { font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; color: var(--primary); }
+
+    /* Timeline */
+    .timeline-row { display: flex; align-items: stretch; }
+    .node-col { display: flex; flex-direction: column; align-items: center; width: 56px; flex-shrink: 0; }
+    .connector { width: 3px; flex: 1; min-height: 20px; background: var(--border); border-radius: 2px; }
+    .connector.filled { background: rgba(244,140,37,0.55); }
+    .connector.filled-blue   { background: rgba(96,165,250,0.55); }
+    .connector.filled-purple { background: rgba(167,139,250,0.55); }
+
+    .node {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; position: relative;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+    }
+    .node svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+    .node.done     { background: var(--green-dim);   border-color: rgba(74,222,128,0.5); }
+    .node.done svg { color: var(--green); }
+    .node.current  { background: var(--primary-dim); border-color: var(--primary); border-width: 2px; }
+    .node.current svg { color: var(--primary); }
+    .node.upcoming svg { color: var(--muted); opacity: 0.5; }
+    .node.current-blue  { background: var(--blue-dim);   border-color: var(--blue); border-width: 2px; }
+    .node.current-blue svg { color: var(--blue); }
+    .node.current-purple{ background: var(--purple-dim); border-color: var(--purple); border-width: 2px; }
+    .node.current-purple svg { color: var(--purple); }
+    .node.endpoint-start  { background: var(--green-dim); border-color: rgba(74,222,128,0.4); }
+    .node.endpoint-start svg { color: var(--green); }
+    .node.endpoint-finish { background: var(--primary-dim); border-color: rgba(244,140,37,0.4); }
+    .node.endpoint-finish svg { color: var(--primary); }
+    .node.endpoint-finish-blue   { background: var(--blue-dim);   border-color: rgba(96,165,250,0.4); }
+    .node.endpoint-finish-blue svg { color: var(--blue); }
+    .node.endpoint-finish-purple { background: var(--purple-dim); border-color: rgba(167,139,250,0.4); }
+    .node.endpoint-finish-purple svg { color: var(--purple); }
+
+    /* Pulse */
+    .pulse-ring {
+      position: absolute; inset: -8px; border-radius: 50%;
+      border: 2.5px solid rgba(244,140,37,0.35);
+      animation: pulse-out 1.4s ease-out infinite;
+    }
+    .pulse-ring.blue   { border-color: rgba(96,165,250,0.4); }
+    .pulse-ring.purple { border-color: rgba(167,139,250,0.4); }
+    @keyframes pulse-out {
+      0%   { transform: scale(1);   opacity: 0.7; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    /* Phase card */
+    .phase-card {
+      flex: 1; padding: 12px 4px 12px 14px; cursor: pointer; user-select: none;
+    }
+    .phase-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .phase-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+    .phase-name { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+    .phase-name.done { color: var(--text); }
+    .phase-name.current { color: var(--text); }
+    .phase-name.upcoming { color: var(--muted); }
+
+    .here-badge {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      border-radius: 9999px; padding: 2px 8px;
+    }
+    .here-badge.amber  { color: var(--primary); background: var(--primary-dim); }
+    .here-badge.blue   { color: var(--blue);    background: var(--blue-dim); }
+    .here-badge.purple { color: var(--purple);  background: var(--purple-dim); }
+
+    .phase-dates { font-size: 11px; color: var(--muted); }
+    .status-chip { font-size: 10px; font-weight: 700; border-radius: 9999px; padding: 3px 9px; flex-shrink: 0; }
+    .status-chip.done     { color: var(--green); background: var(--green-dim); }
+    .status-chip.upcoming { color: var(--muted); background: rgba(74,72,68,0.25); }
+    .chevron { font-size: 10px; color: var(--muted); margin-top: 2px; transition: transform 0.25s ease; display: inline-block; }
+    .phase-card.open .chevron { transform: rotate(180deg); }
+
+    .phase-expand { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; opacity: 0; }
+    .phase-expand.open { max-height: 300px; opacity: 1; }
+    .phase-expand-inner { padding-top: 10px; }
+    .divider { height: 1px; background: var(--border); margin: 10px 0; }
+    .phase-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    .phase-focus {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px;
+    }
+    .phase-focus svg { width: 13px; height: 13px; stroke: var(--primary); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    .mini-progress-wrap { border-radius: 10px; padding: 10px 12px; }
+    .mini-progress-wrap.amber  { background: rgba(244,140,37,0.06); }
+    .mini-progress-wrap.blue   { background: rgba(96,165,250,0.06); }
+    .mini-progress-wrap.purple { background: rgba(167,139,250,0.06); }
+    .mini-progress-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 7px; }
+    .mini-track { height: 6px; background: var(--border); border-radius: 9999px; overflow: hidden; }
+    .mini-fill { height: 100%; border-radius: 9999px; transition: width 0.8s ease; }
+
+    /* Endpoint */
+    .endpoint-row { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
+    .endpoint-label { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .endpoint-label.start  { color: var(--green); }
+    .endpoint-label.finish-amber  { color: var(--primary); }
+    .endpoint-label.finish-blue   { color: var(--blue); }
+    .endpoint-label.finish-purple { color: var(--purple); }
+    .endpoint-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 420px; z-index: 50;
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .nav-tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 10px 0 14px; background: none; border: none; cursor: pointer;
+      font-family: inherit; color: var(--muted); transition: color 0.2s;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--primary); }
+    .nav-icon { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+    .nav-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width 0.2s; }
+    .nav-tab.active .nav-icon svg { stroke-width: 2.2; }
+    .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+  </style>
+</head>
+<body>
+
+<!-- Page header -->
+<div class="page-header">
+  <h1>Goals</h1>
+  <p>Your active training roadmaps.</p>
+</div>
+
+<!-- Goal switcher -->
+<div class="goal-switcher">
+  <div class="goal-switcher-scroll">
+
+    <!-- Goal 1: Marathon -->
+    <div class="goal-chip active" onclick="switchGoal('marathon')">
+      <div class="mini-ring">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(244,140,37,0.18)" stroke-width="4"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#f48c25" stroke-width="4"
+            stroke-dasharray="87.96" stroke-dashoffset="50.98" stroke-linecap="round"/>
+        </svg>
+        <div class="mini-ring-label" style="color:var(--primary)">42%</div>
+      </div>
+      <div class="goal-chip-info">
+        <div class="goal-chip-name">July Marathon</div>
+        <div class="goal-chip-sub">Build · 45 days left</div>
+      </div>
+    </div>
+
+    <!-- Goal 2: Weight loss -->
+    <div class="goal-chip" onclick="switchGoal('weight')">
+      <div class="mini-ring">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(96,165,250,0.18)" stroke-width="4"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#60a5fa" stroke-width="4"
+            stroke-dasharray="87.96" stroke-dashoffset="35.18" stroke-linecap="round"/>
+        </svg>
+        <div class="mini-ring-label" style="color:var(--blue)">60%</div>
+      </div>
+      <div class="goal-chip-info">
+        <div class="goal-chip-name">Lose 8 kg</div>
+        <div class="goal-chip-sub">Cut · 9 weeks left</div>
+      </div>
+    </div>
+
+    <!-- Goal 3: Strength -->
+    <div class="goal-chip" onclick="switchGoal('strength')">
+      <div class="mini-ring">
+        <svg width="36" height="36" viewBox="0 0 36 36">
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(167,139,250,0.18)" stroke-width="4"/>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="#a78bfa" stroke-width="4"
+            stroke-dasharray="87.96" stroke-dashoffset="74.77" stroke-linecap="round"/>
+        </svg>
+        <div class="mini-ring-label" style="color:var(--purple)">15%</div>
+      </div>
+      <div class="goal-chip-info">
+        <div class="goal-chip-name">Bench 100 kg</div>
+        <div class="goal-chip-sub">Strength · 18 wks left</div>
+      </div>
+    </div>
+
+    <!-- Add goal -->
+    <button class="goal-chip-add">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Goal
+    </button>
+
+  </div>
+</div>
+
+<!-- Journey panels -->
+<div class="journey-panels">
+
+  <!-- ════════ GOAL 1: MARATHON ════════ -->
+  <div class="journey-panel active" id="panel-marathon">
+
+    <!-- Overall progress -->
+    <div class="card">
+      <div class="progress-meta">
+        <div class="progress-meta-left">
+          <h2>July Marathon</h2>
+          <p>Build Phase · 6 weeks remaining</p>
+        </div>
+        <div class="progress-pct" style="color:var(--primary)">42%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="fill-marathon" style="width:0%; background:linear-gradient(to right, rgba(244,140,37,0.6),#f48c25)">
+          <div class="progress-dot" style="background:var(--primary)"></div>
+        </div>
+      </div>
+      <div class="phase-ticks">
+        <span class="phase-tick">Base</span>
+        <span class="phase-tick active" style="color:var(--primary)">Build</span>
+        <span class="phase-tick">Peak</span>
+        <span class="phase-tick">Taper</span>
+      </div>
+    </div>
+
+    <!-- Journey path -->
+    <div class="card">
+      <div class="journey-header">
+        <svg viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        <span>Journey Path</span>
+      </div>
+
+      <div class="endpoint-row">
+        <div class="node-col">
+          <div class="node endpoint-start"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 5l14 4-14 4"/></svg></div>
+          <div class="connector filled"></div>
+        </div>
+        <div><div class="endpoint-label start">Start</div><div class="endpoint-date">Jan 15, 2026</div></div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector filled"></div>
+          <div class="node done"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <div class="connector filled"></div>
+        </div>
+        <div class="phase-card" id="card-m-base" onclick="togglePhase('m-base')">
+          <div class="phase-card-header">
+            <div>
+              <div class="phase-name-row"><span class="phase-name done">Base</span></div>
+              <div class="phase-dates">Jan 15 – Feb 26, 2026</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span class="status-chip done">✓ Done</span><span class="chevron">▼</span>
+            </div>
+          </div>
+          <div class="phase-expand" id="expand-m-base">
+            <div class="phase-expand-inner">
+              <div class="divider"></div>
+              <p class="phase-desc">Built your aerobic engine with easy runs and mobility. Volume over intensity.</p>
+              <div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>3 easy runs · 2 mobility sessions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector filled"></div>
+          <div class="node current"><div class="pulse-ring"></div><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card open" id="card-m-build" onclick="togglePhase('m-build')">
+          <div class="phase-card-header">
+            <div>
+              <div class="phase-name-row"><span class="phase-name current">Build</span><span class="here-badge amber">You are here</span></div>
+              <div class="phase-dates">Feb 26 – Apr 8, 2026</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand open" id="expand-m-build">
+            <div class="phase-expand-inner">
+              <div class="divider"></div>
+              <p class="phase-desc">Layer in tempo efforts and strength work. This is where fitness is made.</p>
+              <div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1 tempo · 1 long run · 1 strength session</div>
+              <div class="mini-progress-wrap amber">
+                <div class="mini-progress-header"><span>Phase progress</span><span style="color:var(--primary)">68%</span></div>
+                <div class="mini-track"><div class="mini-fill" id="phase-m-fill" style="width:0%;background:var(--primary)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node upcoming"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card" id="card-m-peak" onclick="togglePhase('m-peak')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name upcoming">Peak</span></div><div class="phase-dates">Apr 8 – May 20</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip upcoming">Upcoming</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-m-peak">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Race-specific sessions at goal pace.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1 race pace · 1 long run · 1 strength</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node upcoming"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card" id="card-m-taper" onclick="togglePhase('m-taper')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name upcoming">Taper</span></div><div class="phase-dates">May 20 – Jun 15</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip upcoming">Upcoming</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-m-taper">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Pull back volume, keep intensity. Arrive feeling electric.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>2 easy shakeouts · 1 strides session</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node endpoint-finish"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+        </div>
+        <div><div class="endpoint-label finish-amber">Finish Line</div><div class="endpoint-date">Jun 15, 2026 · July Marathon</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ GOAL 2: WEIGHT LOSS ════════ -->
+  <div class="journey-panel" id="panel-weight">
+
+    <div class="card">
+      <div class="progress-meta">
+        <div class="progress-meta-left">
+          <h2>Lose 8 kg</h2>
+          <p>Cut Phase · 9 weeks remaining</p>
+        </div>
+        <div class="progress-pct" style="color:var(--blue)">60%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="fill-weight" style="width:0%; background:linear-gradient(to right, rgba(96,165,250,0.6),#60a5fa)">
+          <div class="progress-dot" style="background:var(--blue)"></div>
+        </div>
+      </div>
+      <div class="phase-ticks">
+        <span class="phase-tick">Deficit</span>
+        <span class="phase-tick active" style="color:var(--blue)">Cut</span>
+        <span class="phase-tick">Maintain</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="journey-header">
+        <svg viewBox="0 0 24 24" style="stroke:var(--blue)"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        <span style="color:var(--blue)">Journey Path</span>
+      </div>
+
+      <div class="endpoint-row">
+        <div class="node-col">
+          <div class="node endpoint-start"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 5l14 4-14 4"/></svg></div>
+          <div class="connector filled-blue"></div>
+        </div>
+        <div><div class="endpoint-label start">Start</div><div class="endpoint-date">Feb 1, 2026</div></div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector filled-blue"></div>
+          <div class="node done"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+          <div class="connector filled-blue"></div>
+        </div>
+        <div class="phase-card" id="card-w-deficit" onclick="togglePhase('w-deficit')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name done">Deficit</span></div><div class="phase-dates">Feb 1 – Mar 1, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip done">✓ Done</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-w-deficit">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Established a 400 kcal daily deficit through diet and cardio tracking.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Track calories · 3 cardio sessions · 2 strength</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector filled-blue"></div>
+          <div class="node current-blue"><div class="pulse-ring blue"></div><svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card open" id="card-w-cut" onclick="togglePhase('w-cut')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name current">Cut</span><span class="here-badge blue">You are here</span></div><div class="phase-dates">Mar 1 – May 10, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand open" id="expand-w-cut">
+            <div class="phase-expand-inner">
+              <div class="divider"></div>
+              <p class="phase-desc">Sustained fat loss phase. High protein, moderate carbs. Zone 2 cardio 4×/week.</p>
+              <div class="phase-focus"><svg viewBox="0 0 24 24" style="stroke:var(--blue)"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>4 Zone-2 sessions · 2 strength · log meals daily</div>
+              <div class="mini-progress-wrap blue">
+                <div class="mini-progress-header"><span>Phase progress</span><span style="color:var(--blue)">52%</span></div>
+                <div class="mini-track"><div class="mini-fill" id="phase-w-fill" style="width:0%;background:var(--blue)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node upcoming"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card" id="card-w-maintain" onclick="togglePhase('w-maintain')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name upcoming">Maintain</span></div><div class="phase-dates">May 10 – Jun 28, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip upcoming">Upcoming</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-w-maintain">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Transition to maintenance calories. Reverse diet carefully to preserve body composition.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Weekly check-ins · maintain protein · 3 sessions</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node endpoint-finish-blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+        </div>
+        <div><div class="endpoint-label finish-blue">Target Reached</div><div class="endpoint-date">Jun 28, 2026 · –8 kg</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ GOAL 3: STRENGTH ════════ -->
+  <div class="journey-panel" id="panel-strength">
+
+    <div class="card">
+      <div class="progress-meta">
+        <div class="progress-meta-left">
+          <h2>Bench 100 kg</h2>
+          <p>Foundation Phase · 18 weeks remaining</p>
+        </div>
+        <div class="progress-pct" style="color:var(--purple)">15%</div>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="fill-strength" style="width:0%; background:linear-gradient(to right, rgba(167,139,250,0.6),#a78bfa)">
+          <div class="progress-dot" style="background:var(--purple)"></div>
+        </div>
+      </div>
+      <div class="phase-ticks">
+        <span class="phase-tick active" style="color:var(--purple)">Foundation</span>
+        <span class="phase-tick">Hypertrophy</span>
+        <span class="phase-tick">Strength</span>
+        <span class="phase-tick">Peaking</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="journey-header">
+        <svg viewBox="0 0 24 24" style="stroke:var(--purple)"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        <span style="color:var(--purple)">Journey Path</span>
+      </div>
+
+      <div class="endpoint-row">
+        <div class="node-col">
+          <div class="node endpoint-start"><svg viewBox="0 0 24 24"><path d="M5 3v18M5 5l14 4-14 4"/></svg></div>
+          <div class="connector filled-purple"></div>
+        </div>
+        <div><div class="endpoint-label start">Start</div><div class="endpoint-date">Mar 10, 2026</div></div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector filled-purple"></div>
+          <div class="node current-purple"><div class="pulse-ring purple"></div><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card open" id="card-s-foundation" onclick="togglePhase('s-foundation')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name current">Foundation</span><span class="here-badge purple">You are here</span></div><div class="phase-dates">Mar 10 – May 4, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand open" id="expand-s-foundation">
+            <div class="phase-expand-inner">
+              <div class="divider"></div>
+              <p class="phase-desc">Build movement quality and baseline strength. Focus on form with 70–75% 1RM loads.</p>
+              <div class="phase-focus"><svg viewBox="0 0 24 24" style="stroke:var(--purple)"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>3 upper/lower splits · 4×8 bench sets</div>
+              <div class="mini-progress-wrap purple">
+                <div class="mini-progress-header"><span>Phase progress</span><span style="color:var(--purple)">22%</span></div>
+                <div class="mini-track"><div class="mini-fill" id="phase-s-fill" style="width:0%;background:var(--purple)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node upcoming"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card" id="card-s-hypertrophy" onclick="togglePhase('s-hypertrophy')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name upcoming">Hypertrophy</span></div><div class="phase-dates">May 4 – Jun 29, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip upcoming">Upcoming</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-s-hypertrophy">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Higher volume for muscle growth. 8–12 rep ranges, progressive overload weekly.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>4×10 bench · 5 sessions/week · +2.5kg/week</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node upcoming"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card" id="card-s-strength" onclick="togglePhase('s-strength')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name upcoming">Strength</span></div><div class="phase-dates">Jun 29 – Aug 10, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip upcoming">Upcoming</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-s-strength">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Heavy triples and doubles. 85–92% 1RM. CNS loading to build max force output.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>5×3 bench · 4 sessions/week · weekly 1RM test</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node upcoming"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+          <div class="connector"></div>
+        </div>
+        <div class="phase-card" id="card-s-peak" onclick="togglePhase('s-peak')">
+          <div class="phase-card-header">
+            <div><div class="phase-name-row"><span class="phase-name upcoming">Peaking</span></div><div class="phase-dates">Aug 10 – Sep 1, 2026</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span class="status-chip upcoming">Upcoming</span><span class="chevron">▼</span></div>
+          </div>
+          <div class="phase-expand" id="expand-s-peak">
+            <div class="phase-expand-inner"><div class="divider"></div><p class="phase-desc">Reduce volume, keep intensity high. Prime the CNS for your 100kg attempt.</p><div class="phase-focus"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>2 sessions/week · 90–95% intensity · rest</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="endpoint-row">
+        <div class="node-col">
+          <div class="connector"></div>
+          <div class="node endpoint-finish-purple"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+        </div>
+        <div><div class="endpoint-label finish-purple">Lift Achieved</div><div class="endpoint-date">Sep 1, 2026 · 100 kg bench</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /journey-panels -->
+
+<!-- Bottom nav -->
+<nav class="bottom-nav">
+  <button class="nav-tab">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg></span>
+    <span class="nav-label">Home</span>
+  </button>
+  <button class="nav-tab">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 0 1 5 5c0 3.5-2 6-5 7C9 13 7 10.5 7 7a5 5 0 0 1 5-5z"/><path d="M12 14v8"/><path d="M9 19h6"/></svg></span>
+    <span class="nav-label">Nutrition</span>
+  </button>
+  <button class="nav-tab active">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" style="fill:currentColor;stroke:none"/><path d="M12 3V1M12 23v-2M3 12H1M23 12h-2"/></svg></span>
+    <span class="nav-label">Goals</span>
+  </button>
+  <button class="nav-tab">
+    <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
+    <span class="nav-label">Profile</span>
+  </button>
+</nav>
+
+<script>
+  const goals = ['marathon','weight','strength'];
+  const fills = {
+    marathon: { overall: 42, phase: 68 },
+    weight:   { overall: 60, phase: 52 },
+    strength: { overall: 15, phase: 22 },
+  };
+
+  function switchGoal(key) {
+    // Update chips
+    document.querySelectorAll('.goal-chip').forEach(c => c.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    // Update panels
+    goals.forEach(g => {
+      document.getElementById('panel-' + g).classList.toggle('active', g === key);
+    });
+    // Animate bars for newly visible panel
+    setTimeout(() => animateFills(key), 80);
+  }
+
+  function animateFills(key) {
+    const f = fills[key];
+    const overall = document.getElementById('fill-' + key);
+    const phase   = document.getElementById('phase-' + key.charAt(0) + '-fill') ||
+                    document.getElementById('phase-' + key + '-fill');
+    if (overall) overall.style.width = f.overall + '%';
+    if (phase)   phase.style.width   = f.phase + '%';
+  }
+
+  function togglePhase(key) {
+    const card   = document.getElementById('card-' + key);
+    const expand = document.getElementById('expand-' + key);
+    const isOpen = card.classList.contains('open');
+    card.classList.toggle('open', !isOpen);
+    expand.classList.toggle('open', !isOpen);
+  }
+
+  // Initial animation
+  window.addEventListener('load', () => {
+    setTimeout(() => animateFills('marathon'), 300);
+  });
+</script>
+</body>
+</html>

@@ -8,6 +8,9 @@ enum AltoTheme {
     static let textPrimary = Color(red: 0.93, green: 0.93, blue: 0.95)
     static let textSecondary = Color(red: 0.56, green: 0.58, blue: 0.64)
     static let border = Color(red: 0.35, green: 0.23, blue: 0.13)
+    static let green = Color(red: 0.29, green: 0.86, blue: 0.50)
+    static let red = Color(red: 0.97, green: 0.44, blue: 0.44)
+    static let surface = Color(red: 0.14, green: 0.094, blue: 0.055)
 }
 
 struct AltoCardModifier: ViewModifier {

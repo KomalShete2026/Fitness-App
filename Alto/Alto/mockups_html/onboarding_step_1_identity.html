@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto – Step 1: Your Identity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #1a1108;
+      --surface:      #231809;
+      --card:         #2c1f10;
+      --border:       #4a3018;
+      --primary:      #f48c25;
+      --primary-dim:  rgba(244,140,37,0.12);
+      --text:         #f0ede8;
+      --muted:        #7a7870;
+    }
+
+    body {
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Shell ── */
+    .shell {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    /* ── Background silhouette ── */
+    .bg-figure {
+      position: absolute;
+      top: -10px;
+      right: -30px;
+      width: 220px;
+      opacity: 1;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── Progress ── */
+    .progress-track { display: flex; gap: 6px; }
+    .progress-pill {
+      flex: 1; height: 4px; border-radius: 9999px;
+      background: var(--border);
+    }
+    .progress-pill.active { background: var(--primary); }
+
+    /* ── Step header ── */
+    .step-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 6px;
+    }
+    .step-title { font-size: 30px; font-weight: 800; line-height: 1.15; }
+    .step-subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+    }
+
+    /* ── Field label ── */
+    .field-label {
+      display: flex; align-items: center; gap: 2px;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 10px;
+    }
+    .field-label .req { color: var(--primary); }
+
+    /* ── Text input ── */
+    .text-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: #c8a97e;
+      font-family: inherit; font-size: 15px; font-weight: 600;
+      padding: 12px 14px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .text-input::placeholder { color: var(--muted); font-weight: 400; }
+    .text-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(244,140,37,0.15);
+    }
+    /* prevent browser autofill from flashing white */
+    .text-input:-webkit-autofill,
+    .text-input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+      box-shadow: 0 0 0 1000px var(--surface) inset;
+      -webkit-text-fill-color: #c8a97e;
+      caret-color: #c8a97e;
+    }
+
+    /* ── Gender toggle ── */
+    .gender-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .gender-btn {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; text-align: center;
+      transition: all 0.15s ease;
+    }
+    .gender-btn:hover { border-color: var(--primary); color: var(--text); }
+    .gender-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-dim);
+      color: var(--primary);
+    }
+
+    /* ── Stat rows ── */
+    .stat-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .stat-label {
+      font-size: 14px; font-weight: 500;
+      color: var(--text);
+      min-width: 56px;
+    }
+    .stat-spacer { flex: 1; }
+    .stepper {
+      display: flex; align-items: center; gap: 0;
+    }
+    .stepper-btn {
+      width: 34px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .stepper-btn:hover { border-color: var(--primary); color: var(--text); }
+    .stepper-btn.plus {
+      border-color: rgba(244,140,37,0.4);
+      background: rgba(244,140,37,0.10);
+      color: var(--primary);
+    }
+    .stepper-btn.plus:hover { background: rgba(244,140,37,0.18); }
+    .stepper-value {
+      width: 64px; height: 36px;
+      text-align: center;
+      font-size: 17px; font-weight: 700; font-family: inherit;
+      color: var(--text); font-variant-numeric: tabular-nums;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: none; border-right: none;
+      outline: none;
+      -moz-appearance: textfield;
+      appearance: textfield;
+      transition: background 0.15s;
+    }
+    .stepper-value:focus {
+      background: #2e1f0e;
+      color: var(--primary);
+    }
+    .stepper-value::-webkit-inner-spin-button,
+    .stepper-value::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .stat-unit {
+      font-size: 13px; font-weight: 600;
+      color: var(--muted); width: 28px;
+    }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ── Age error ── */
+    .age-error {
+      font-size: 12px; font-weight: 600; color: #f87171;
+      margin-top: 6px; display: none;
+    }
+    .age-error.show { display: block; }
+
+    /* ── Footer note ── */
+    .footer-note {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--muted);
+      padding: 0 4px;
+    }
+
+    /* ── Nav ── */
+    .nav { display: flex; gap: 10px; }
+    .btn-back {
+      padding: 14px 20px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; visibility: hidden;
+    }
+    .btn-next {
+      flex: 1; padding: 14px; border-radius: 12px;
+      border: none; background: var(--primary);
+      color: #1a1108; font-family: inherit; font-size: 15px; font-weight: 800;
+      cursor: pointer; letter-spacing: 0.01em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-next:hover { opacity: 0.9; }
+    .btn-next:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Background fitness silhouette -->
+  <svg class="bg-figure" viewBox="0 0 200 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="fig-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f48c25" stop-opacity="0.13"/>
+        <stop offset="100%" stop-color="#f48c25" stop-opacity="0.01"/>
+      </linearGradient>
+    </defs>
+    <!-- Head -->
+    <circle cx="118" cy="38" r="22" fill="url(#fig-grad)"/>
+    <!-- Ponytail -->
+    <path d="M132 24 Q148 10 144 32" stroke="url(#fig-grad)" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <!-- Torso -->
+    <path d="M100 60 Q90 90 88 130 L148 130 Q146 90 136 60 Z" fill="url(#fig-grad)"/>
+    <!-- Left arm (raised) -->
+    <path d="M100 70 Q72 50 58 30" stroke="url(#fig-grad)" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <!-- Right arm (down) -->
+    <path d="M136 75 Q158 110 162 145" stroke="url(#fig-grad)" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <!-- Left leg -->
+    <path d="M100 130 Q90 190 78 250 Q72 290 80 340" stroke="url(#fig-grad)" stroke-width="16" stroke-linecap="round" fill="none"/>
+    <!-- Right leg (bent / running) -->
+    <path d="M136 130 Q148 180 160 220 Q168 250 148 290" stroke="url(#fig-grad)" stroke-width="16" stroke-linecap="round" fill="none"/>
+    <!-- Left foot -->
+    <path d="M80 340 Q70 355 58 358" stroke="url(#fig-grad)" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <!-- Right foot -->
+    <path d="M148 290 Q158 310 172 315" stroke="url(#fig-grad)" stroke-width="10" stroke-linecap="round" fill="none"/>
+  </svg>
+
+  <div class="content">
+    <!-- Progress -->
+    <div class="progress-track">
+      <div class="progress-pill active"></div>
+      <div class="progress-pill"></div>
+      <div class="progress-pill"></div>
+      <div class="progress-pill"></div>
+      <div class="progress-pill"></div>
+    </div>
+
+    <!-- Header -->
+    <div>
+      <p class="step-label">Step 1 of 5</p>
+      <h1 class="step-title">Your Identity</h1>
+      <p class="step-subtitle">A few basics to personalize your training plan.</p>
+    </div>
+
+    <!-- Full Name -->
+    <div class="card">
+      <div class="field-label">Full Name <span class="req">*</span></div>
+      <input id="name" class="text-input" placeholder="e.g. Alex Rivera" autocomplete="name" />
+    </div>
+
+    <!-- Gender -->
+    <div class="card">
+      <div class="field-label">Gender <span class="req">*</span></div>
+      <div class="gender-row">
+        <button class="gender-btn active" id="btn-male" onclick="setGender('male')">Male</button>
+        <button class="gender-btn"        id="btn-female" onclick="setGender('female')">Female</button>
+      </div>
+    </div>
+
+    <!-- Body Stats -->
+    <div class="card">
+      <div class="field-label">Body Stats <span class="req">*</span></div>
+
+      <!-- Age -->
+      <div class="stat-row">
+        <span class="stat-label">Age</span>
+        <div class="stat-spacer"></div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjust('age', -1)">−</button>
+          <input class="stepper-value" id="age-val" type="number" value="25" min="10" max="99" onblur="onManualInput('age')" />
+          <button class="stepper-btn plus" onclick="adjust('age', 1)">+</button>
+        </div>
+        <span class="stat-unit">yrs</span>
+      </div>
+      <p class="age-error" id="age-error">Age must be 14 or above.</p>
+
+      <div class="divider"></div>
+
+      <!-- Height -->
+      <div class="stat-row">
+        <span class="stat-label">Height</span>
+        <div class="stat-spacer"></div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjust('height', -0.1)">−</button>
+          <input class="stepper-value" id="height-val" type="number" value="5.7" min="4.0" max="7.5" step="0.1" onblur="onManualInput('height')" />
+          <button class="stepper-btn plus" onclick="adjust('height', 0.1)">+</button>
+        </div>
+        <span class="stat-unit">ft</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Weight -->
+      <div class="stat-row">
+        <span class="stat-label">Weight</span>
+        <div class="stat-spacer"></div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="adjust('weight', -1)">−</button>
+          <input class="stepper-value" id="weight-val" type="number" value="154" min="70" max="400" onblur="onManualInput('weight')" />
+          <button class="stepper-btn plus" onclick="adjust('weight', 1)">+</button>
+        </div>
+        <span class="stat-unit">lb</span>
+      </div>
+    </div>
+
+    <!-- Footer note -->
+    <p class="footer-note">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0110 0v4"/>
+      </svg>
+      Encrypted and used only for personalization.
+    </p>
+
+    <!-- Nav -->
+    <div class="nav">
+      <button class="btn-back">← Back</button>
+      <button class="btn-next" onclick="validate()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const limits = {
+    age:    { min: 10,  max: 99,  decimals: 0 },
+    height: { min: 4.0, max: 7.5, decimals: 1 },
+    weight: { min: 70,  max: 400, decimals: 0 }
+  };
+
+  function getVal(key) {
+    const raw = parseFloat(document.getElementById(key + '-val').value);
+    return isNaN(raw) ? limits[key].min : raw;
+  }
+
+  function setVal(key, v) {
+    const { min, max, decimals } = limits[key];
+    const clamped = Math.min(max, Math.max(min, parseFloat(v.toFixed(decimals))));
+    document.getElementById(key + '-val').value = clamped.toFixed(decimals);
+    if (key === 'age') {
+      document.getElementById('age-error').classList.toggle('show', clamped < 14);
+    }
+  }
+
+  function adjust(key, delta) {
+    setVal(key, getVal(key) + delta);
+  }
+
+  function onManualInput(key) {
+    const raw = parseFloat(document.getElementById(key + '-val').value);
+    if (!isNaN(raw)) setVal(key, raw);
+  }
+
+  function setGender(g) {
+    document.getElementById('btn-male').classList.toggle('active', g === 'male');
+    document.getElementById('btn-female').classList.toggle('active', g === 'female');
+  }
+
+  function validate() {
+    const name = document.getElementById('name').value.trim();
+    const age  = getVal('age');
+    document.getElementById('age-error').classList.toggle('show', age < 14);
+    if (!name || age < 14) {
+      document.getElementById('name').focus();
+      return;
+    }
+    alert('Step 1 complete ✓ — moving to Step 2 (Health Conditions)');
+  }
+</script>
+</body>
+</html>

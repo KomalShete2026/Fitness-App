@@ -2,12 +2,13 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject private var userStore: UserStore
 
     var body: some View {
-        NavigationStack {
-            if onboardingViewModel.isOnboardingComplete {
-                DashboardView()
-            } else {
+        if onboardingViewModel.isOnboardingComplete || userStore.isOnboardingComplete {
+            MainTabView()
+        } else {
+            NavigationStack {
                 OnboardingContainerView()
             }
         }

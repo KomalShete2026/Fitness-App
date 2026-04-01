@@ -97,30 +97,42 @@ struct OrchestratorContext {
     let mood: DailyMood
     let sleepHours: Double?
     let rainProbability: Double?
+    let temperatureCelsius: Double?
     let activityPreset: String
     let goalName: String
     let goalPhase: GoalPhase
     let readiness: DailyReadiness?
     let weatherImpact: WeatherImpact
+    let healthConditions: [String]
+    let workoutPreferences: [String]
+    let calorieTarget: Int
 
     init(
         mood: DailyMood,
         sleepHours: Double?,
         rainProbability: Double?,
+        temperatureCelsius: Double? = nil,
         activityPreset: String,
         goalName: String,
         goalPhase: GoalPhase,
         readiness: DailyReadiness? = nil,
-        weatherImpact: WeatherImpact = .clear
+        weatherImpact: WeatherImpact = .clear,
+        healthConditions: [String] = [],
+        workoutPreferences: [String] = [],
+        calorieTarget: Int = 400
     ) {
         self.mood = mood
         self.sleepHours = sleepHours
         self.rainProbability = rainProbability
+        self.temperatureCelsius = temperatureCelsius
         self.activityPreset = activityPreset
         self.goalName = goalName
         self.goalPhase = goalPhase
         self.readiness = readiness
         self.weatherImpact = weatherImpact
+        self.healthConditions = healthConditions
+        self.workoutPreferences = workoutPreferences
+        self.calorieTarget = calorieTarget
     }
 }
 
@@ -131,10 +143,44 @@ struct OrchestratedAction: Identifiable {
 }
 
 struct OrchestratedPlan {
+    // Core — used by existing UI
     let headline: String
     let why: String
     let workoutName: String
     let workoutDurationMinutes: Int
     let actions: [OrchestratedAction]
     let shouldPivot: Bool
+    // Extended — populated by ClaudeOrchestrationService
+    let plannedActivities: [PlannedActivity]
+    let calorieTarget: Int
+    let readinessSummary: String
+    let coachNote: String
+    let pivotReason: String?
+
+    // Backwards-compatible init for SentinelOrchestrator (rule-based)
+    init(
+        headline: String,
+        why: String,
+        workoutName: String,
+        workoutDurationMinutes: Int,
+        actions: [OrchestratedAction],
+        shouldPivot: Bool,
+        plannedActivities: [PlannedActivity] = [],
+        calorieTarget: Int = 0,
+        readinessSummary: String = "",
+        coachNote: String = "",
+        pivotReason: String? = nil
+    ) {
+        self.headline = headline
+        self.why = why
+        self.workoutName = workoutName
+        self.workoutDurationMinutes = workoutDurationMinutes
+        self.actions = actions
+        self.shouldPivot = shouldPivot
+        self.plannedActivities = plannedActivities
+        self.calorieTarget = calorieTarget
+        self.readinessSummary = readinessSummary
+        self.coachNote = coachNote
+        self.pivotReason = pivotReason
+    }
 }

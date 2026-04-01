@@ -37,6 +37,19 @@ This folder contains a Phase 1 + Phase 2 + Phase 3 + Phase 4 SwiftUI implementat
 
 1. Create a new iOS App project in Xcode named `Alto` (SwiftUI lifecycle).
 2. Add all files under `AltoApp/` into your Xcode target.
+
+## Add Unit Tests (Cmd+U to run)
+
+1. In Xcode: **File → New → Target → Unit Testing Bundle**
+2. Name it `AltoTests`, set "Target to be Tested" to `Alto`
+3. Add all `.swift` files under `AltoTests/` to the new `AltoTests` target
+4. Press **Cmd+U** to run all tests
+
+Test coverage:
+- `SentinelOrchestratorTests` — 18 tests (readiness scoring, pivot logic, effort gap, onboarding audit)
+- `GoalTimelineTests` — 5 tests (4-phase generation, ordering, no overlap, full coverage)
+- `VoiceWorkoutParserTests` — 6 tests (yoga, running, edge cases, abbreviations)
+- `NutritionViewModelTests` — 10 tests (meals CRUD, calories, water tracking, macro goals)
 3. In Supabase SQL editor, run:
    - fresh setup: `Supabase/schema.sql`
    - upgrade existing table: `Supabase/migrations/20260308_onboarding_profile_v2.sql`

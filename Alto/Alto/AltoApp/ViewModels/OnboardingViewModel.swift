@@ -167,6 +167,7 @@ final class OnboardingViewModel: ObservableObject {
         do {
             try await profileRepository.saveProfile(record)
             isOnboardingComplete = true
+            UserStore.shared.save(from: record)
         } catch ProfileRepositoryError.missingConfiguration {
             saveError = "Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables."
         } catch ProfileRepositoryError.requestFailed(let statusCode, let message) {

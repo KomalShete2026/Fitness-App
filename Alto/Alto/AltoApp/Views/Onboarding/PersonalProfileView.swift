@@ -4,152 +4,204 @@ struct PersonalProfileView: View {
     @EnvironmentObject private var viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 16) {
-            StepHeaderView(
-                stepIndex: 1,
-                totalSteps: viewModel.totalSteps,
-                title: "Your Identity",
-                subtitle: "Let's build your metabolic baseline to personalize your journey."
-            )
+        ZStack(alignment: .topTrailing) {
 
-            HStack(spacing: 14) {
-                Image(systemName: "figure.run.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(AltoTheme.primary)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Train smart. Feel unstoppable.")
-                        .font(.headline.weight(.bold))
+            // Decorative fitness silhouette — replace with Image("fitness_woman_bg")
+            // in Assets.xcassets for a photo-realistic look
+            Image(systemName: "figure.run")
+                .font(.system(size: 220))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            AltoTheme.primary.opacity(0.11),
+                            AltoTheme.primary.opacity(0.02)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .offset(x: 55, y: -8)
+                .allowsHitTesting(false)
+
+            VStack(spacing: 16) {
+                StepHeaderView(
+                    stepIndex: 1,
+                    totalSteps: viewModel.totalSteps,
+                    title: "Your Identity",
+                    subtitle: "A few basics to personalize your training plan."
+                )
+
+                // Full Name
+                VStack(alignment: .leading, spacing: 8) {
+                    requiredLabel("FULL NAME")
+                    TextField("e.g. Alex Rivera", text: $viewModel.draft.name)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .padding(12)
+                        .background(AltoTheme.background)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(AltoTheme.border, lineWidth: 1)
+                        )
                         .foregroundStyle(AltoTheme.textPrimary)
-                    Text("Set your identity once, Alto adapts every workout after.")
-                        .font(.footnote)
-                        .foregroundStyle(AltoTheme.textSecondary)
                 }
-                Spacer()
-            }
-            .altoCard()
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("FULL NAME *")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AltoTheme.primary)
-                TextField("Enter your name", text: $viewModel.draft.name)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .padding()
-                    .background(AltoTheme.card)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(AltoTheme.border, lineWidth: 1))
-                    .foregroundStyle(AltoTheme.textPrimary)
-            }
-            .altoCard()
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text("GENDER")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AltoTheme.primary)
-                Picker("Gender", selection: Binding(
-                    get: { viewModel.draft.gender },
-                    set: { viewModel.updateGender($0) }
-                )) {
-                    ForEach(Gender.allCases) { gender in
-                        Text(gender.rawValue).tag(gender)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .tint(AltoTheme.primary)
-            }
-            .altoCard()
-
-            VStack(alignment: .leading, spacing: 14) {
-                Text("PHYSICAL STATS")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AltoTheme.primary)
-
-                statRow(
-                    title: "Age",
-                    valueText: "\(viewModel.draft.age)",
-                    unitText: "years"
-                ) {
-                    Picker("Age", selection: $viewModel.draft.age) {
-                        ForEach(10...90, id: \.self) { age in
-                            Text("\(age)").tag(age)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(AltoTheme.primary)
-                }
-
-                statRow(
-                    title: "Height",
-                    valueText: "\(viewModel.draft.heightInchesValue)",
-                    unitText: "inches"
-                ) {
-                    Picker("Height in inches", selection: $viewModel.draft.heightInchesValue) {
-                        ForEach(48...90, id: \.self) { inches in
-                            Text("\(inches)").tag(inches)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(AltoTheme.primary)
-                }
-
-                statRow(
-                    title: "Weight",
-                    valueText: "\(viewModel.draft.weightLb)",
-                    unitText: "lb"
-                ) {
-                    Picker("Weight in lb", selection: $viewModel.draft.weightLb) {
-                        ForEach(70...400, id: \.self) { weight in
-                            Text("\(weight)").tag(weight)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(AltoTheme.primary)
-                }
-
-                if let ageError = viewModel.ageValidationMessage {
-                    Text(ageError)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.red)
-                }
-            }
-            .altoCard()
-
-            Text("Your data is encrypted and used only for metabolic calculations.")
-                .font(.footnote.italic())
-                .foregroundStyle(AltoTheme.textSecondary)
                 .altoCard()
+
+                // Gender
+                VStack(alignment: .leading, spacing: 10) {
+                    requiredLabel("GENDER")
+                    HStack(spacing: 10) {
+                        ForEach(Gender.allCases) { gender in
+                            genderButton(gender)
+                        }
+                    }
+                }
+                .altoCard()
+
+                // Body Stats
+                VStack(alignment: .leading, spacing: 0) {
+                    requiredLabel("BODY STATS")
+                    Spacer().frame(height: 14)
+
+                    statRow(label: "Age", value: $viewModel.draft.age, unit: "yrs", range: 10...99)
+
+                    if let ageError = viewModel.ageValidationMessage {
+                        Text(ageError)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.red)
+                            .padding(.top, 6)
+                    }
+
+                    rowDivider()
+
+                    statRow(label: "Height", value: $viewModel.draft.heightInchesValue, unit: "in", range: 48...90)
+
+                    rowDivider()
+
+                    statRow(label: "Weight", value: $viewModel.draft.weightLb, unit: "lb", range: 70...400)
+                }
+                .altoCard()
+
+                HStack(spacing: 5) {
+                    Image(systemName: "lock.fill")
+                        .font(.caption2)
+                    Text("Encrypted and used only for personalization.")
+                        .font(.footnote)
+                }
+                .foregroundStyle(AltoTheme.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+            }
         }
     }
 
-    private func statRow<Control: View>(
-        title: String,
-        valueText: String,
-        unitText: String,
-        @ViewBuilder control: () -> Control
+    // MARK: – Components
+
+    @ViewBuilder
+    private func requiredLabel(_ text: String) -> some View {
+        HStack(spacing: 2) {
+            Text(text)
+                .font(.caption.weight(.bold))
+                .tracking(1.2)
+                .foregroundStyle(AltoTheme.primary)
+            Text("*")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AltoTheme.primary)
+        }
+    }
+
+    @ViewBuilder
+    private func genderButton(_ gender: Gender) -> some View {
+        let isSelected = viewModel.draft.gender == gender
+        Button { viewModel.updateGender(gender) } label: {
+            Text(gender.rawValue)
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(isSelected ? AltoTheme.primary : AltoTheme.textSecondary)
+                .background(isSelected ? AltoTheme.primary.opacity(0.12) : AltoTheme.background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isSelected ? AltoTheme.primary : AltoTheme.border, lineWidth: 1.5)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+    }
+
+    @ViewBuilder
+    private func rowDivider() -> some View {
+        Rectangle()
+            .fill(AltoTheme.border)
+            .frame(height: 1)
+            .padding(.vertical, 14)
+    }
+
+    @ViewBuilder
+    private func statRow(
+        label: String,
+        value: Binding<Int>,
+        unit: String,
+        range: ClosedRange<Int>
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(AltoTheme.textSecondary)
+        HStack(spacing: 12) {
+            Text(label)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(AltoTheme.textPrimary)
+                .frame(minWidth: 52, alignment: .leading)
 
-            HStack(spacing: 8) {
-                Text(valueText)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+            Spacer()
+
+            // − value + stepper
+            HStack(spacing: 0) {
+                Button {
+                    let next = value.wrappedValue - 1
+                    if range.contains(next) { value.wrappedValue = next }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.caption.weight(.bold))
+                        .frame(width: 34, height: 36)
+                        .foregroundStyle(AltoTheme.textSecondary)
+                        .background(AltoTheme.background)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(AltoTheme.border, lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+
+                Text("\(value.wrappedValue)")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
                     .foregroundStyle(AltoTheme.textPrimary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(AltoTheme.background)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(AltoTheme.border, lineWidth: 1))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .frame(width: 52)
+                    .multilineTextAlignment(.center)
 
-                Text(unitText)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AltoTheme.textSecondary)
-
-                Spacer()
-
-                control()
+                Button {
+                    let next = value.wrappedValue + 1
+                    if range.contains(next) { value.wrappedValue = next }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption.weight(.bold))
+                        .frame(width: 34, height: 36)
+                        .foregroundStyle(AltoTheme.primary)
+                        .background(AltoTheme.primary.opacity(0.10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(AltoTheme.primary.opacity(0.4), lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
             }
+
+            Text(unit)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AltoTheme.textSecondary)
+                .frame(width: 28, alignment: .leading)
         }
     }
 }

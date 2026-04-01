@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto – Step 4: Workout Preferences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #1a1108;
+      --surface:     #231809;
+      --card:        #2c1f10;
+      --border:      #4a3018;
+      --primary:     #f48c25;
+      --primary-dim: rgba(244,140,37,0.12);
+      --text:        #f0ede8;
+      --muted:       #7a7870;
+    }
+
+    body {
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .shell {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+      position: relative;
+    }
+
+    .bg-figure {
+      position: absolute;
+      top: -10px; right: -20px;
+      width: 180px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content {
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    /* ── Progress ── */
+    .progress-track { display: flex; gap: 6px; }
+    .progress-pill  { flex: 1; height: 4px; border-radius: 9999px; background: var(--border); }
+    .progress-pill.active { background: var(--primary); }
+
+    /* ── Header ── */
+    .step-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 6px;
+    }
+    .step-title    { font-size: 30px; font-weight: 800; line-height: 1.15; }
+    .step-subtitle { font-size: 14px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+    /* ── Field label ── */
+    .field-label {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 2px;
+    }
+
+    /* ── Workout grid ── */
+    .workout-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .workout-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 16px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.18s, background 0.18s, transform 0.1s;
+      position: relative;
+    }
+    .workout-card:hover  { border-color: rgba(244,140,37,0.5); transform: translateY(-1px); }
+    .workout-card:active { transform: scale(0.97); }
+    .workout-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-dim);
+    }
+
+    /* checkmark badge */
+    .card-check {
+      position: absolute;
+      top: 12px; right: 12px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .workout-card.selected .card-check {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+    .card-check::after {
+      content: '';
+      width: 4px; height: 8px;
+      border: 2px solid #1a1108;
+      border-top: none; border-left: none;
+      transform: rotate(45deg) scaleY(0);
+      transition: transform 0.15s ease;
+      margin-top: -2px;
+    }
+    .workout-card.selected .card-check::after { transform: rotate(45deg) scaleY(1); }
+
+    .workout-icon { font-size: 30px; line-height: 1; }
+    .workout-name {
+      font-size: 14px; font-weight: 700;
+      color: var(--text); line-height: 1.2;
+    }
+    .workout-card.selected .workout-name { color: var(--primary); }
+    .workout-tag {
+      display: inline-block;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 3px 8px;
+      width: fit-content;
+      transition: all 0.15s;
+    }
+    .workout-card.selected .workout-tag {
+      color: var(--primary);
+      border-color: rgba(244,140,37,0.35);
+      background: rgba(244,140,37,0.08);
+    }
+
+    /* ── Selected summary pill ── */
+    .selected-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      transition: border-color 0.2s;
+    }
+    .selected-bar.has-selection { border-color: rgba(244,140,37,0.35); }
+
+    .selected-bar-left { display: flex; align-items: center; gap: 10px; }
+    .selected-count {
+      font-size: 22px; font-weight: 800;
+      color: var(--primary); line-height: 1;
+      min-width: 24px;
+    }
+    .selected-meta { display: flex; flex-direction: column; gap: 1px; }
+    .selected-meta-title {
+      font-size: 13px; font-weight: 700; color: var(--text);
+    }
+    .selected-meta-sub {
+      font-size: 11px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .skip-link {
+      font-size: 12px; color: var(--muted);
+      text-decoration: underline; text-underline-offset: 3px;
+      cursor: pointer; background: none; border: none;
+      font-family: inherit; transition: color 0.15s;
+    }
+    .skip-link:hover { color: var(--text); }
+
+    /* ── Nav ── */
+    .nav { display: flex; gap: 10px; }
+    .btn-back {
+      padding: 14px 20px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--muted); font-family: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-back:hover { border-color: var(--text); color: var(--text); }
+    .btn-next {
+      flex: 1; padding: 14px; border-radius: 12px;
+      border: none; background: var(--primary);
+      color: #1a1108; font-family: inherit; font-size: 15px; font-weight: 800;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-next:hover  { opacity: 0.9; }
+    .btn-next:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Background silhouette -->
+  <svg class="bg-figure" viewBox="0 0 160 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#f48c25" stop-opacity="0.11"/>
+        <stop offset="100%" stop-color="#f48c25" stop-opacity="0.01"/>
+      </linearGradient>
+    </defs>
+    <circle cx="90" cy="32" r="20" fill="url(#g)"/>
+    <path d="M104 20 Q118 8 114 26" stroke="url(#g)" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <path d="M74 52 Q68 82 66 112 L114 112 Q112 82 106 52 Z" fill="url(#g)"/>
+    <!-- yoga pose arms wide -->
+    <path d="M74 68 Q44 60 28 72"  stroke="url(#g)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M106 68 Q136 60 152 72" stroke="url(#g)" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <!-- legs split -->
+    <path d="M82 112 Q64 155 48 200 Q42 228 52 255" stroke="url(#g)" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M98 112 Q116 155 132 200 Q138 228 128 255" stroke="url(#g)" stroke-width="14" stroke-linecap="round" fill="none"/>
+  </svg>
+
+  <div class="content">
+
+    <!-- Progress -->
+    <div class="progress-track">
+      <div class="progress-pill active"></div>
+      <div class="progress-pill active"></div>
+      <div class="progress-pill active"></div>
+      <div class="progress-pill active"></div>
+      <div class="progress-pill"></div>
+    </div>
+
+    <!-- Header -->
+    <div>
+      <p class="step-label">Step 4 of 5</p>
+      <h1 class="step-title">Workout Preferences</h1>
+      <p class="step-subtitle">Pick what you enjoy. Alto mixes these into your weekly plan.</p>
+    </div>
+
+    <!-- Field label -->
+    <div class="field-label">Choose all that apply</div>
+
+    <!-- Workout grid -->
+    <div class="workout-grid">
+
+      <div class="workout-card" id="card-pilates" onclick="toggle('pilates')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🧘‍♀️</span>
+        <span class="workout-name">Pilates</span>
+        <span class="workout-tag">Core · Flexibility</span>
+      </div>
+
+      <div class="workout-card" id="card-yoga" onclick="toggle('yoga')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🪷</span>
+        <span class="workout-name">Yoga</span>
+        <span class="workout-tag">Mind · Body</span>
+      </div>
+
+      <div class="workout-card" id="card-hiit" onclick="toggle('hiit')">
+        <span class="card-check"></span>
+        <span class="workout-icon">⚡</span>
+        <span class="workout-name">HIIT</span>
+        <span class="workout-tag">Cardio · Burn</span>
+      </div>
+
+      <div class="workout-card" id="card-running" onclick="toggle('running')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🏃‍♀️</span>
+        <span class="workout-name">Running</span>
+        <span class="workout-tag">Endurance</span>
+      </div>
+
+      <div class="workout-card" id="card-rowing" onclick="toggle('rowing')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🚣‍♀️</span>
+        <span class="workout-name">Rowing</span>
+        <span class="workout-tag">Full Body</span>
+      </div>
+
+      <div class="workout-card" id="card-strength" onclick="toggle('strength')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🏋️‍♀️</span>
+        <span class="workout-name">Strength</span>
+        <span class="workout-tag">Power · Tone</span>
+      </div>
+
+      <div class="workout-card" id="card-cycling" onclick="toggle('cycling')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🚴‍♀️</span>
+        <span class="workout-name">Cycling</span>
+        <span class="workout-tag">Cardio · Low Impact</span>
+      </div>
+
+      <div class="workout-card" id="card-swimming" onclick="toggle('swimming')">
+        <span class="card-check"></span>
+        <span class="workout-icon">🏊‍♀️</span>
+        <span class="workout-name">Swimming</span>
+        <span class="workout-tag">Full Body · Recovery</span>
+      </div>
+
+      <div class="workout-card" id="card-other" onclick="toggle('other')">
+        <span class="card-check"></span>
+        <span class="workout-icon">➕</span>
+        <span class="workout-name">Other</span>
+        <span class="workout-tag">Custom</span>
+      </div>
+
+    </div>
+
+    <!-- Other text input (expands when Other is selected) -->
+    <div id="other-expand" style="
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.3s ease;
+    ">
+      <div style="
+        background: var(--card); border: 1.5px solid var(--primary);
+        border-radius: 14px; padding: 16px 18px;
+      ">
+        <label style="
+          display: block; font-size: 10px; font-weight: 700;
+          letter-spacing: 0.12em; text-transform: uppercase;
+          color: var(--primary); margin-bottom: 10px;
+        ">What workout? *</label>
+        <input id="other-input" type="text"
+          placeholder="e.g. Boxing, Dance, Calisthenics…"
+          onclick="event.stopPropagation()"
+          oninput="updateBar()"
+          style="
+            width: 100%; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 10px;
+            color: #c8a97e; font-family: inherit; font-size: 15px; font-weight: 500;
+            padding: 12px 14px; outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+          "
+        />
+      </div>
+    </div>
+
+    <!-- Selected summary -->
+    <div class="selected-bar" id="selected-bar">
+      <div class="selected-bar-left">
+        <span class="selected-count" id="sel-count">0</span>
+        <div class="selected-meta">
+          <span class="selected-meta-title" id="sel-title">No workouts selected</span>
+          <span class="selected-meta-sub"   id="sel-names"></span>
+        </div>
+      </div>
+      <button class="skip-link" onclick="clearAll()">Clear</button>
+    </div>
+
+    <!-- Nav -->
+    <div class="nav">
+      <button class="btn-back">← Back</button>
+      <button class="btn-next">Continue →</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const selected = new Set();
+
+  const labels = {
+    pilates:  'Pilates',
+    yoga:     'Yoga',
+    hiit:     'HIIT',
+    running:  'Running',
+    rowing:   'Rowing',
+    strength: 'Strength',
+    cycling:  'Cycling',
+    swimming: 'Swimming',
+    other:    'Other',
+  };
+
+  function toggle(key) {
+    const card = document.getElementById('card-' + key);
+    if (selected.has(key)) {
+      selected.delete(key);
+      card.classList.remove('selected');
+    } else {
+      selected.add(key);
+      card.classList.add('selected');
+    }
+
+    // show/hide Other input
+    if (key === 'other') {
+      const expand = document.getElementById('other-expand');
+      const isOpen = selected.has('other');
+      expand.style.maxHeight = isOpen ? '120px' : '0';
+      expand.style.opacity   = isOpen ? '1' : '0';
+      if (isOpen) setTimeout(() => document.getElementById('other-input').focus(), 300);
+    }
+
+    updateBar();
+  }
+
+  function clearAll() {
+    selected.forEach(k => document.getElementById('card-' + k).classList.remove('selected'));
+    selected.clear();
+    const expand = document.getElementById('other-expand');
+    expand.style.maxHeight = '0';
+    expand.style.opacity   = '0';
+    document.getElementById('other-input').value = '';
+    updateBar();
+  }
+
+  function updateBar() {
+    const otherText = document.getElementById('other-input').value.trim();
+    const count = selected.size;
+    const bar   = document.getElementById('selected-bar');
+    document.getElementById('sel-count').textContent = count;
+    bar.classList.toggle('has-selection', count > 0);
+
+    const names = [...selected].map(k => {
+      if (k === 'other') return otherText ? otherText : 'Other';
+      return labels[k];
+    });
+
+    if (count === 0) {
+      document.getElementById('sel-title').textContent = 'No workouts selected';
+      document.getElementById('sel-names').textContent = '';
+    } else {
+      document.getElementById('sel-title').textContent =
+        count === 1 ? '1 workout selected' : `${count} workouts selected`;
+      document.getElementById('sel-names').textContent = names.join(' · ');
+    }
+  }
+</script>
+</body>
+</html>
