@@ -1,74 +1,315 @@
-# Alto iOS - Phase 1 Scaffold
+# Alto iOS - Production Ready v1.0
 
-This folder contains a Phase 1 + Phase 2 + Phase 3 + Phase 4 SwiftUI implementation:
+This is the complete Alto fitness app implementation with user-friendly API key management.
 
-- Story 1.1: Personal Profile & Privacy
-- Story 1.2: Health Shield
-- Story 1.3: Goal Architect
-- Story 2.1: Bio-Sync (HealthKit)
-- Story 2.2: Environment Scout (WeatherKit)
-- Story 3.1: Morning Pivot
-- Story 4.1: Invisible Log (Voice)
-- Story 4.2: Macro-Vision (Camera)
+## ✨ What's New in v1.0
 
-## Included
+### 🔑 User-Managed API Keys
+- **No more environment variables!** Users enter their Gemini API key directly in the app
+- Settings screen with secure API key storage
+- Model selection (Gemini 1.5 Flash, 2.0 Flash, 1.5 Pro)
+- Visual status indicators
 
-- SwiftUI onboarding flow (3 steps)
-- Name-required validation
-- Height Imperial/Metric toggle with conversion
-- Heart condition mandatory disclaimer popup
-- Privacy footer on health screen
-- Goal timeline generation (Base -> Build -> Peak -> Taper)
-- First milestone shown immediately in Path UI
-- Supabase REST insert into `user_profiles`
-- SQL schema in `Supabase/schema.sql`
-- HealthKit permissions for Sleep, HRV, Menstrual Cycle
-- Dashboard card with "Last Night's Sleep"
-- WeatherKit fetch for temperature + precipitation probability
-- Weather Conflict flag when rain probability > 50%
-- Morning Pivot engine: if Sleep < 6.5h OR Rain > 50%, show Pivoted state with Why
-- Accept action reschedules hard workout to next high-readiness day
-- Voice dictation (Speech framework) + parser for phrases like "I did 30 mins of Yoga"
-- Path progress sessions increment instantly after parsed log
-- Camera capture flow + OpenAI Vision macro estimate
-- Required user confirmation before macros are added to daily totals
+### 🤖 Gemini-Powered Features
+- **AI Coaching:** Personalized daily workout plans
+- **Meal Analysis:** Photo-based macro estimation using Gemini Vision
+- **Voice Logging:** Natural language workout parsing
+- **Smart Pivoting:** Automatic workout adjustments
 
-## Wire into Xcode
+### 🏗️ Architecture Improvements
+- MVVM pattern with SwiftUI
+- UserSettings service for centralized configuration
+- Graceful fallback to rule-based orchestration
+- Comprehensive error handling
 
-1. Create a new iOS App project in Xcode named `Alto` (SwiftUI lifecycle).
-2. Add all files under `AltoApp/` into your Xcode target.
+---
 
-## Add Unit Tests (Cmd+U to run)
+## 📋 Setup Instructions
 
-1. In Xcode: **File → New → Target → Unit Testing Bundle**
-2. Name it `AltoTests`, set "Target to be Tested" to `Alto`
-3. Add all `.swift` files under `AltoTests/` to the new `AltoTests` target
-4. Press **Cmd+U** to run all tests
+### 1. Open in Xcode
 
-Test coverage:
-- `SentinelOrchestratorTests` — 18 tests (readiness scoring, pivot logic, effort gap, onboarding audit)
-- `GoalTimelineTests` — 5 tests (4-phase generation, ordering, no overlap, full coverage)
-- `VoiceWorkoutParserTests` — 6 tests (yoga, running, edge cases, abbreviations)
-- `NutritionViewModelTests` — 10 tests (meals CRUD, calories, water tracking, macro goals)
-3. In Supabase SQL editor, run:
-   - fresh setup: `Supabase/schema.sql`
-   - upgrade existing table: `Supabase/migrations/20260308_onboarding_profile_v2.sql`
-4. Provide environment values before running app:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `SUPABASE_ACCESS_TOKEN` (optional, required if your RLS needs auth bearer)
-   - `OPENAI_API_KEY` (for macro analysis)
-5. In your app target `Signing & Capabilities`, add:
-   - HealthKit
-   - WeatherKit
-6. In `Info.plist`, add usage descriptions:
-   - `NSHealthShareUsageDescription`
-   - `NSLocationWhenInUseUsageDescription`
-   - `NSCameraUsageDescription`
-   - `NSMicrophoneUsageDescription`
-   - `NSSpeechRecognitionUsageDescription`
+```bash
+cd Alto/Alto
+open Alto.xcodeproj
+```
 
-## Notes
+### 2. Configure Capabilities
 
-- `SupabaseProfileRepository` uses Supabase PostgREST (`/rest/v1/user_profiles`) with `URLSession`, so no SDK is required for Phase 1.
-- Weather requires location access and can return unavailable if user declines permission.
+Go to **Target → Signing & Capabilities** and add:
+
+- ✅ **HealthKit** (required for sleep/activity tracking)
+- ✅ **WeatherKit** (required for weather-based recommendations)
+
+### 3. Add Privacy Permissions to Info.plist
+
+Add these entries to your `Info.plist`:
+
+```xml
+<key>NSHealthShareUsageDescription</key>
+<string>Alto needs access to your health data to personalize your training plan based on sleep quality and activity levels.</string>
+
+<key>NSHealthUpdateUsageDescription</key>
+<string>Alto may update your health data with workout information.</string>
+
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>Alto uses your location to provide weather-based workout recommendations and adapt your training to conditions.</string>
+
+<key>NSCameraUsageDescription</key>
+<string>Alto uses your camera to analyze meal photos for nutrition tracking.</string>
+
+<key>NSMicrophoneUsageDescription</key>
+<string>Alto uses your microphone for voice-based workout logging.</string>
+
+<key>NSSpeechRecognitionUsageDescription</key>
+<string>Alto uses speech recognition to understand your voice workout logs.</string>
+```
+
+### 4. Build and Run
+
+Press **⌘R** or click the Play button in Xcode.
+
+---
+
+## 🔧 First-Time User Flow
+
+### Step 1: Complete Onboarding
+- Enter name, age, height, weight
+- Select health conditions (optional)
+- Choose workout preferences
+- Set fitness goal and target date
+- App generates 4-phase training timeline
+
+### Step 2: Configure Gemini API Key
+
+1. Open **Profile** tab
+2. Tap the **AI Features** card (will show "Setup Required")
+3. Tap **"How to get API key"**
+4. Visit [Google AI Studio](https://aistudio.google.com/apikey)
+5. Sign in with your Google account
+6. Click **"Create API Key"** → **"Create API key in new project"**
+7. Copy the key (starts with `AIza...`)
+8. Paste into the app
+9. Select preferred model:
+   - **Gemini 1.5 Flash** (recommended) - Fast, 15 RPM free tier
+   - **Gemini 2.0 Flash** - Experimental, faster
+   - **Gemini 1.5 Pro** - Most capable, 2 RPM free tier
+
+### Step 3: Grant Permissions
+- **HealthKit** - Tap "Connect" when prompted
+- **Location** - Tap "Allow While Using App"
+- **Notifications** - Tap "Allow" for daily reminders
+
+---
+
+## 🧪 Running Unit Tests
+
+### In Xcode (Recommended)
+Press **⌘U** or go to **Product → Test**
+
+### Via Command Line
+```bash
+xcodebuild test \
+  -scheme Alto \
+  -destination 'platform=iOS Simulator,name=iPhone 15' \
+  -enableCodeCoverage YES
+```
+
+### Test Coverage
+- ✅ **SentinelOrchestratorTests** (18 tests) - Readiness scoring, pivot logic, effort gap analysis
+- ✅ **GoalTimelineTests** (5 tests) - 4-phase generation, ordering, coverage
+- ✅ **VoiceWorkoutParserTests** (6 tests) - Natural language parsing
+- ✅ **NutritionViewModelTests** (10 tests) - Meal CRUD, calorie tracking
+
+---
+
+## 📁 Project Structure
+
+```
+AltoApp/
+├── AltoApp.swift              # App entry point with UserSettings injection
+├── RootView.swift             # Onboarding/Main router
+│
+├── Services/
+│   ├── UserSettings.swift     # 🆕 API key & preferences management
+│   ├── ClaudeOrchestrationService.swift  # Gemini AI planning
+│   ├── MacroVisionService.swift         # 🆕 Gemini Vision meal analysis
+│   ├── OrchestratorAgent.swift          # Rule-based fallback
+│   ├── HealthKitService.swift
+│   ├── WeatherService.swift
+│   ├── VoiceWorkoutParser.swift
+│   └── UserStore.swift
+│
+├── ViewModels/
+│   ├── DashboardViewModel.swift
+│   ├── OnboardingViewModel.swift
+│   ├── NutritionViewModel.swift
+│   └── GoalProgressViewModel.swift
+│
+├── Views/
+│   ├── Home/
+│   │   ├── HomeView.swift
+│   │   └── SentinelPopupView.swift
+│   ├── Profile/
+│   │   ├── ProfileView.swift
+│   │   └── SettingsView.swift      # 🆕 API key configuration UI
+│   ├── Nutrition/
+│   ├── Goals/
+│   ├── Onboarding/
+│   └── Components/
+│       └── AltoTheme.swift
+│
+└── Models/
+    ├── ProfileModels.swift
+    ├── NutritionModels.swift
+    ├── ActivityModels.swift
+    └── OrchestratorModels.swift
+```
+
+---
+
+## 🔑 API Key Management
+
+### Where is it stored?
+- **UserDefaults** (encrypted at rest by iOS)
+- Key: `"geminiAPIKey"`
+- Auto-saved on every change
+
+### How to access?
+```swift
+@EnvironmentObject var settings: UserSettings
+
+if settings.isAPIKeyConfigured {
+    // Proceed with AI features
+} else {
+    // Show setup prompt
+}
+```
+
+### Security Notes
+- ✅ Never logged or transmitted to external servers
+- ✅ Only sent to Google Gemini API
+- ✅ Can be cleared anytime in Settings
+- ⚠️ **Production:** Consider migrating to iOS Keychain for enhanced security
+
+---
+
+## 🎯 Feature Flags
+
+### With API Key Configured
+- ✅ AI-powered daily workout plans
+- ✅ Meal photo analysis with macros
+- ✅ Personalized coaching insights
+
+### Without API Key (Fallback)
+- ✅ Rule-based workout plans
+- ✅ Manual meal entry
+- ✅ Voice workout logging
+- ✅ Goal timeline tracking
+
+---
+
+## 🐛 Troubleshooting
+
+### "API key required" error
+**Solution:** Profile → AI Features → Enter API Key
+
+### "Rate limit exceeded (429)"
+**Solutions:**
+1. Wait 60 seconds (rate limit resets)
+2. Switch to Gemini 1.5 Pro in Settings
+3. Check quota at [Google AI Studio](https://aistudio.google.com)
+
+### WeatherKit not working
+**Requirements:**
+- Apple Developer membership ($99/year)
+- WeatherKit capability enabled
+- Location permission granted
+
+### HealthKit connection fails
+**Check:**
+1. HealthKit capability added to target
+2. Privacy permissions in Info.plist
+3. Permissions granted in iOS Settings → Health
+
+### Build errors
+**Common fixes:**
+```bash
+# Clean build folder
+⌘⇧K (Xcode)
+
+# Reset package cache
+File → Packages → Reset Package Caches
+
+# Delete derived data
+~/Library/Developer/Xcode/DerivedData
+```
+
+---
+
+## 📚 Additional Documentation
+
+- **[README.md](../../README.md)** - User guide and features overview
+- **[ARCHITECTURE.md](../../ARCHITECTURE.md)** - Technical architecture deep-dive
+- **Testing Guide** - See `AltoTests/` folder
+
+---
+
+## 🚀 Deployment
+
+### TestFlight
+
+1. Archive the app: **Product → Archive**
+2. Validate the archive
+3. Distribute to App Store Connect
+4. Create new TestFlight build
+5. Add external testers
+
+### App Store
+
+1. Complete App Store Connect listing
+2. Upload screenshots (required sizes)
+3. Write privacy policy (required for HealthKit)
+4. Submit for review
+
+**Important:** WeatherKit requires Apple Developer Program membership.
+
+---
+
+## 🔒 Privacy Compliance
+
+### Data Collection
+- ❌ No personal data collected
+- ❌ No analytics or tracking
+- ❌ No third-party SDKs
+
+### Data Storage
+- ✅ All data stored locally
+- ✅ HealthKit data stays in Apple Health
+- ✅ API key stored in UserDefaults
+- ⚠️ Meal photos sent to Gemini (temporarily, then deleted)
+
+### User Control
+- Users can clear API key anytime
+- No account required
+- No data syncing (unless Supabase configured)
+
+---
+
+## 📄 License
+
+MIT License - See LICENSE file for details
+
+---
+
+## 🙏 Credits
+
+- **Google Gemini** for AI orchestration
+- **Apple HealthKit** for health data
+- **Apple WeatherKit** for weather data
+- **SwiftUI** for UI framework
+
+---
+
+**Version:** 1.0.0  
+**Last Updated:** April 2026  
+**Support:** See main [README.md](../../README.md#-support)

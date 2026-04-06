@@ -44,31 +44,29 @@ final class DashboardViewModel: ObservableObject {
     private let locationService: LocationService
     private let weatherService: WeatherDataService
     private let voiceParser: VoiceWorkoutParsing
-    private let macroVisionService: MacroVisionService
     private let speechService: SpeechTranscriptionService
     private let orchestrator: Orchestrating
     private let notificationService: NotificationService
-    private let claudeService: ClaudeOrchestrationService?
+    private let userSettings: UserSettings
 
     init(
         healthKitService: HealthKitService,
         locationService: LocationService,
         weatherService: WeatherDataService,
         voiceParser: VoiceWorkoutParsing,
-        macroVisionService: MacroVisionService,
         speechService: SpeechTranscriptionService,
         orchestrator: Orchestrating,
-        notificationService: NotificationService
+        notificationService: NotificationService,
+        userSettings: UserSettings
     ) {
         self.healthKitService = healthKitService
         self.locationService = locationService
         self.weatherService = weatherService
         self.voiceParser = voiceParser
-        self.macroVisionService = macroVisionService
         self.speechService = speechService
         self.orchestrator = orchestrator
         self.notificationService = notificationService
-        self.claudeService = try? ClaudeOrchestrationService()
+        self.userSettings = userSettings
         self.plannedWorkout = PlannedWorkout(
             name: "Tempo Run",
             intensity: .hard,
@@ -217,15 +215,23 @@ final class DashboardViewModel: ObservableObject {
             return
         }
 
+        guard userSettings.isAPIKeyConfigured else {
+            errorMessage = "Please add your Gemini API key in Profile → Settings."
+            return
+        }
+
         isAnalyzingMeal = true
         defer { isAnalyzingMeal = false }
 
+        let macroService = GeminiVisionMacroService(
+            apiKey: userSettings.geminiAPIKey,
+            model: userSettings.selectedGeminiModel
+        )
+
         do {
-            pendingMacroEstimate = try await macroVisionService.analyzeMeal(imageData: jpegData)
-        } catch MacroVisionError.missingAPIKey {
-            errorMessage = "Missing OPENAI_API_KEY environment variable."
+            pendingMacroEstimate = try await macroService.analyzeMeal(imageData: jpegData)
         } catch {
-            errorMessage = "Macro analysis failed: \(error.localizedDescription)"
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -358,7 +364,7 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func generateTodayPlanWithClaude() async {
-        guard let claude = claudeService else {
+        guard userSettings.isAPIKeyConfigured else {
             // No API key configured — fall back to rule-based
             generateTodayPlan()
             return
@@ -366,6 +372,11 @@ final class DashboardViewModel: ObservableObject {
 
         isGeneratingPlan = true
         defer { isGeneratingPlan = false }
+
+        let claude = ClaudeOrchestrationService(
+            apiKey: userSettings.geminiAPIKey,
+            model: userSettings.selectedGeminiModel
+        )
 
         let readiness = DailyReadiness(
             soreness: sorenessScore,
@@ -405,7 +416,7 @@ final class DashboardViewModel: ObservableObject {
                 _ = readinessScore // surfaced via coachNote / headline in UI
             }
         } catch {
-            errorMessage = "Plan generation: \(error.localizedDescription). Using default plan."
+            errorMessage = error.localizedDescription
             generateTodayPlan()
         }
     }

@@ -1,17 +1,26 @@
 import SwiftUI
 
 struct HomeView: View {
-    @StateObject private var viewModel = DashboardViewModel(
-        healthKitService: AppleHealthKitService(),
-        locationService: CoreLocationService(),
-        weatherService: AppleWeatherService(),
-        voiceParser: VoiceWorkoutParser(),
-        macroVisionService: OpenAIVisionMacroService(),
-        speechService: AppleSpeechTranscriptionService(),
-        orchestrator: SentinelOrchestrator(),
-        notificationService: UserNotificationService()
-    )
     @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var userSettings: UserSettings
+
+    @StateObject private var viewModel: DashboardViewModel
+
+    init() {
+        // Note: We can't access @EnvironmentObject in init, so we create a placeholder
+        // The view will use the actual settings from the environment
+        let settings = UserSettings()
+        _viewModel = StateObject(wrappedValue: DashboardViewModel(
+            healthKitService: AppleHealthKitService(),
+            locationService: CoreLocationService(),
+            weatherService: AppleWeatherService(),
+            voiceParser: VoiceWorkoutParser(),
+            speechService: AppleSpeechTranscriptionService(),
+            orchestrator: SentinelOrchestrator(),
+            notificationService: UserNotificationService(),
+            userSettings: settings
+        ))
+    }
 
     var body: some View {
         ZStack {

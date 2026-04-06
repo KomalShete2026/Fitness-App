@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject private var userStore: UserStore
+    @EnvironmentObject private var userSettings: UserSettings
+    @State private var showSettings = false
 
     var body: some View {
         ZStack {
@@ -9,6 +11,7 @@ struct ProfileView: View {
             ScrollView {
                 VStack(spacing: 14) {
                     profileCard
+                    apiStatusCard
                     healthCard
                     connectedCard
                     settingsCard
@@ -17,6 +20,10 @@ struct ProfileView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 100)
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environmentObject(userSettings)
         }
     }
 
@@ -74,6 +81,58 @@ struct ProfileView: View {
         .background(AltoTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(AltoTheme.border, lineWidth: 1))
+    }
+
+    // MARK: - API Status Card
+
+    private var apiStatusCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionLabel("AI FEATURES")
+
+            HStack(spacing: 12) {
+                Image(systemName: userSettings.isAPIKeyConfigured ? "sparkles" : "exclamationmark.triangle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(userSettings.isAPIKeyConfigured ? AltoTheme.primary : AltoTheme.red)
+                    .frame(width: 32, height: 32)
+                    .background((userSettings.isAPIKeyConfigured ? AltoTheme.primary : AltoTheme.red).opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(userSettings.isAPIKeyConfigured ? "AI Coaching Active" : "Setup Required")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AltoTheme.textPrimary)
+
+                    Text(userSettings.isAPIKeyConfigured
+                         ? "\(userSettings.selectedGeminiModel.displayName) • Ready"
+                         : "Tap to configure Gemini API key")
+                        .font(.system(size: 12))
+                        .foregroundStyle(AltoTheme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AltoTheme.border)
+            }
+            .padding(14)
+            .background(userSettings.isAPIKeyConfigured ? AltoTheme.primary.opacity(0.05) : AltoTheme.red.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(userSettings.isAPIKeyConfigured ? AltoTheme.primary.opacity(0.2) : AltoTheme.red.opacity(0.2), lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+            .onTapGesture {
+                showSettings = true
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+            }
+        }
+        .padding(16)
+        .background(AltoTheme.card)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(AltoTheme.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: - Health Card
@@ -165,11 +224,21 @@ struct ProfileView: View {
             sectionLabel("SETTINGS")
                 .padding(.bottom, 4)
 
-            settingRow(icon: "bell.fill", iconColor: AltoTheme.primary, label: "Notifications", value: "On")
+            Button {
+                showSettings = true
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+            } label: {
+                settingRow(icon: "gearshape.fill", iconColor: AltoTheme.primary, label: "App Settings", value: "")
+            }
+            .buttonStyle(.plain)
+
             Divider().background(AltoTheme.border)
-            settingRow(icon: "clock.fill", iconColor: Color(red: 0.37, green: 0.64, blue: 0.98), label: "Daily Reminders", value: "7:00 AM")
+            settingRow(icon: "bell.fill", iconColor: AltoTheme.primary, label: "Notifications", value: userSettings.notificationsEnabled ? "On" : "Off")
             Divider().background(AltoTheme.border)
-            settingRow(icon: "lock.shield.fill", iconColor: AltoTheme.green, label: "Data Privacy", value: "")
+            settingRow(icon: "clock.fill", iconColor: Color(red: 0.37, green: 0.64, blue: 0.98), label: "Daily Reminders", value: userSettings.dailyReminderTime)
+            Divider().background(AltoTheme.border)
+            settingRow(icon: "lock.shield.fill", iconColor: AltoTheme.green, label: "Data Privacy", value: "Local Only")
             Divider().background(AltoTheme.border)
 
             Button {

@@ -49,13 +49,16 @@ enum ClaudeOrchestrationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "Missing GEMINI_API_KEY. Add it to your environment or Info.plist."
+            return "Gemini API key is missing. Please add it in Profile → Settings."
         case .networkError(let e):
             return "Network error: \(e.localizedDescription)"
         case .invalidResponse(let detail):
-            return "Invalid Gemini response: \(detail)"
+            if detail.contains("429") {
+                return "Rate limit exceeded. Please wait a moment and try again."
+            }
+            return "Invalid response from AI: \(detail)"
         case .jsonParseError(let detail):
-            return "Failed to parse plan: \(detail)"
+            return "Failed to generate plan: \(detail)"
         }
     }
 }
@@ -68,20 +71,15 @@ enum ClaudeOrchestrationError: LocalizedError {
 final class ClaudeOrchestrationService {
 
     private let apiKey: String
-    private let model = "gemini-1.5-pro"
+    private let model: GeminiModel
 
     private var apiURL: URL {
-        URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):generateContent?key=\(apiKey)")!
+        URL(string: "\(model.apiEndpoint)?key=\(apiKey)")!
     }
 
-    init() throws {
-        if let key = Bundle.main.infoDictionary?["GEMINI_API_KEY"] as? String, !key.isEmpty {
-            self.apiKey = key
-        } else if let key = ProcessInfo.processInfo.environment["GEMINI_API_KEY"], !key.isEmpty {
-            self.apiKey = key
-        } else {
-            throw ClaudeOrchestrationError.missingAPIKey
-        }
+    init(apiKey: String, model: GeminiModel = .pro15) {
+        self.apiKey = apiKey
+        self.model = model
     }
 
     // MARK: - Public API
