@@ -1,68 +1,155 @@
 import Foundation
+import UIKit
 
 protocol MacroVisionService {
     func analyzeMeal(imageData: Data) async throws -> MacroEstimate
 }
 
-enum MacroVisionError: Error {
+enum MacroVisionError: Error, LocalizedError {
     case missingAPIKey
-    case badResponse
+    case imageConversionFailed
+    case invalidURL
+    case apiError(statusCode: Int, message: String)
+    case noResponseText
+    case jsonParsingFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAPIKey:
+            return "Gemini API key is missing. Please add it in Profile → Settings."
+        case .imageConversionFailed:
+            return "Failed to process image."
+        case .invalidURL:
+            return "Invalid API configuration."
+        case .apiError(let statusCode, let message):
+            if statusCode == 429 {
+                return "Rate limit exceeded. Please wait a moment and try again."
+            }
+            return "API Error (\(statusCode)): \(message)"
+        case .noResponseText:
+            return "No response from AI service."
+        case .jsonParsingFailed:
+            return "Failed to analyze meal. Please try a clearer photo."
+        }
+    }
 }
 
-final class OpenAIVisionMacroService: MacroVisionService {
-    private struct VisionResponse: Decodable {
-        let output: [OutputItem]
+final class GeminiVisionMacroService: MacroVisionService {
 
-        struct OutputItem: Decodable {
-            let content: [Content]
-        }
+    private let apiKey: String
+    private let model: GeminiModel
 
-        struct Content: Decodable {
-            let text: String?
-        }
+    init(apiKey: String, model: GeminiModel = .flash15) {
+        self.apiKey = apiKey
+        self.model = model
     }
 
     func analyzeMeal(imageData: Data) async throws -> MacroEstimate {
-        guard let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] else {
+        guard !apiKey.isEmpty else {
             throw MacroVisionError.missingAPIKey
         }
 
-        guard let url = URL(string: "https://api.openai.com/v1/responses") else {
-            throw MacroVisionError.badResponse
+        let base64Image = imageData.base64EncodedString()
+        let prompt = """
+        Analyze this food photo and provide detailed nutritional information in JSON format.
+
+        Respond with ONLY a valid JSON object in this exact format (no markdown, no explanation):
+        {
+            "calories": <integer>,
+            "proteinGrams": <number>,
+            "carbsGrams": <number>,
+            "fatGrams": <number>
         }
 
-        let base64 = imageData.base64EncodedString()
-        let prompt = "Estimate meal macros from this image. Return strict JSON with keys calories (int), proteinGrams (number), carbsGrams (number), fatGrams (number)."
+        Guidelines:
+        - Be realistic with portion sizes
+        - Round calories to nearest 10
+        - Round macros to 1 decimal place
+        - If uncertain, provide conservative estimates
+        """
 
-        let body: [String: Any] = [
-            "model": "gpt-4.1-mini",
-            "input": [[
-                "role": "user",
-                "content": [
-                    ["type": "input_text", "text": prompt],
-                    ["type": "input_image", "image_base64": base64]
+        let requestBody: [String: Any] = [
+            "contents": [[
+                "parts": [
+                    ["text": prompt],
+                    ["inline_data": [
+                        "mime_type": "image/jpeg",
+                        "data": base64Image
+                    ]]
                 ]
-            ]]
+            ]],
+            "generationConfig": [
+                "temperature": 0.4,
+                "maxOutputTokens": 256,
+                "responseMimeType": "application/json"
+            ]
         ]
+
+        guard let url = URL(string: "\(model.apiEndpoint)?key=\(apiKey)") else {
+            throw MacroVisionError.invalidURL
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            throw MacroVisionError.badResponse
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw MacroVisionError.apiError(statusCode: 0, message: "Invalid response")
         }
 
-        let decoded = try JSONDecoder().decode(VisionResponse.self, from: data)
-        guard let textPayload = decoded.output.first?.content.first?.text,
-              let textData = textPayload.data(using: .utf8),
-              let estimate = try? JSONDecoder().decode(MacroEstimate.self, from: textData) else {
-            throw MacroVisionError.badResponse
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw MacroVisionError.apiError(statusCode: httpResponse.statusCode, message: errorMessage)
         }
 
-        return estimate
+        let geminiResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
+        guard let text = geminiResponse.candidates.first?.content.parts.first?.text else {
+            throw MacroVisionError.noResponseText
+        }
+
+        return try parseMacroEstimate(from: text)
+    }
+
+    private func parseMacroEstimate(from text: String) throws -> MacroEstimate {
+        let cleanedText = text
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let jsonData = cleanedText.data(using: .utf8) else {
+            throw MacroVisionError.jsonParsingFailed
+        }
+
+        do {
+            return try JSONDecoder().decode(MacroEstimate.self, from: jsonData)
+        } catch {
+            throw MacroVisionError.jsonParsingFailed
+        }
     }
 }
+
+// MARK: - Gemini API Response Models
+
+private struct GeminiResponse: Codable {
+    let candidates: [Candidate]
+
+    struct Candidate: Codable {
+        let content: Content
+
+        struct Content: Codable {
+            let parts: [Part]
+
+            struct Part: Codable {
+                let text: String?
+            }
+        }
+    }
+}
+
+// MARK: - Backward Compatibility Alias
+
+typealias OpenAIVisionMacroService = GeminiVisionMacroService

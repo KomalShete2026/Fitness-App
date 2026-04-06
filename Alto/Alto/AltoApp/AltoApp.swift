@@ -6,12 +6,14 @@ struct AltoApp: App {
         profileRepository: SupabaseProfileRepository()
     )
     @StateObject private var userStore = UserStore()
+    @StateObject private var userSettings = UserSettings()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(onboardingViewModel)
                 .environmentObject(userStore)
+                .environmentObject(userSettings)
         }
     }
 }
