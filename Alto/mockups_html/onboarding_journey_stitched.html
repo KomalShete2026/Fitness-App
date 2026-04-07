@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto – Onboarding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #1a1108;
+      --surface:      #231809;
+      --card:         #2c1f10;
+      --card-hover:   #341f0e;
+      --border:       #4a3018;
+      --border-focus: #f48c25;
+      --primary:      #f48c25;
+      --primary-dim:  rgba(244,140,37,0.12);
+      --text:         #f0ede8;
+      --muted:        #7a7870;
+      --danger:       #f87171;
+      --danger-bg:    rgba(239,68,68,0.08);
+      --green:        #4ade80;
+      --green-dim:    rgba(74,222,128,0.10);
+    }
+
+    body {
+      min-height: 100dvh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ═══════════════════════════════
+       SLIDE TRANSITIONS
+    ═══════════════════════════════ */
+    .screen {
+      display: none;
+      min-height: 100dvh;
+      flex-direction: column;
+    }
+    .screen.active {
+      display: flex;
+      animation: slideIn 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    .screen.exit-left {
+      display: flex;
+      animation: slideOutLeft 0.28s ease forwards;
+      pointer-events: none;
+    }
+    .screen.enter-right {
+      display: flex;
+      animation: slideInRight 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+    @keyframes slideIn        { from { opacity:0; transform:translateX(40px); }  to { opacity:1; transform:translateX(0); } }
+    @keyframes slideOutLeft   { from { opacity:1; transform:translateX(0); }     to { opacity:0; transform:translateX(-40px); } }
+    @keyframes slideInRight   { from { opacity:0; transform:translateX(40px); }  to { opacity:1; transform:translateX(0); } }
+    @keyframes slideInFromLeft{ from { opacity:0; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
+    .screen.enter-left {
+      display: flex;
+      animation: slideInFromLeft 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    /* ═══════════════════════════════
+       WELCOME SCREEN
+    ═══════════════════════════════ */
+    .welcome-screen {
+      background:
+        radial-gradient(ellipse 90% 60% at 50% -10%, rgba(244,140,37,0.22) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 50% at 10% 100%, rgba(244,140,37,0.07) 0%, transparent 60%),
+        var(--bg);
+      align-items: center;
+      justify-content: space-between;
+      padding: max(60px, env(safe-area-inset-top, 60px)) 28px max(48px, env(safe-area-inset-bottom, 48px));
+      text-align: center;
+    }
+
+    .welcome-logo {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .logo-mark {
+      width: 72px; height: 72px;
+      background: var(--primary);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; font-weight: 800; color: #1a1108;
+      box-shadow: 0 0 48px rgba(244,140,37,0.35), 0 0 100px rgba(244,140,37,0.12);
+      position: relative;
+    }
+    .logo-mark::after {
+      content: '';
+      position: absolute; inset: -3px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(244,140,37,0.5), transparent 60%);
+      z-index: -1;
+    }
+    .logo-name {
+      font-size: 36px; font-weight: 800; letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text) 0%, rgba(244,140,37,0.9) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .welcome-illustration {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 24px 0;
+    }
+    .rings-wrap {
+      position: relative; width: 220px; height: 220px;
+    }
+    .ring {
+      position: absolute; border-radius: 50%;
+      border: 2px solid rgba(244,140,37,0.15);
+    }
+    .ring-1 { inset: 0; }
+    .ring-2 { inset: 24px; border-color: rgba(244,140,37,0.25); }
+    .ring-3 { inset: 48px; border-color: rgba(244,140,37,0.40); }
+    .ring-center {
+      position: absolute; inset: 70px;
+      background: linear-gradient(135deg, var(--primary) 0%, #e06b10 100%);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 40px rgba(244,140,37,0.4);
+    }
+    .ring-center svg { width: 36px; height: 36px; stroke: #1a1108; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .ring-dot {
+      position: absolute; width: 10px; height: 10px;
+      border-radius: 50%; background: var(--primary);
+      box-shadow: 0 0 8px rgba(244,140,37,0.6);
+    }
+    .ring-dot:nth-child(5) { top: 6px; left: 50%; transform: translateX(-50%); }
+    .ring-dot:nth-child(6) { bottom: 28px; right: 14px; width:7px; height:7px; opacity:0.6; }
+    .ring-dot:nth-child(7) { bottom: 50px; left: 8px; width:5px; height:5px; opacity:0.4; }
+
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .ring-1 { animation: spin-slow 18s linear infinite; }
+    .ring-2 { animation: spin-slow 12s linear infinite reverse; }
+
+    .welcome-copy {
+      max-width: 320px; margin: 0 auto;
+    }
+    .welcome-headline {
+      font-size: 26px; font-weight: 800; line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    .welcome-headline em { font-style: normal; color: var(--primary); }
+    .welcome-sub {
+      font-size: 15px; color: var(--muted); line-height: 1.6;
+    }
+
+    .welcome-cta {
+      width: 100%; margin-top: 32px;
+    }
+    .btn-primary {
+      width: 100%; padding: 16px;
+      border-radius: 14px; border: none;
+      background: var(--primary);
+      color: #1a1108;
+      font-family: inherit; font-size: 16px; font-weight: 800;
+      cursor: pointer; letter-spacing: 0.01em;
+      transition: opacity 0.2s, transform 0.1s;
+      box-shadow: 0 4px 24px rgba(244,140,37,0.35);
+    }
+    .btn-primary:hover  { opacity: 0.92; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .welcome-login {
+      margin-top: 16px;
+      font-size: 13px; color: var(--muted);
+    }
+    .welcome-login a {
+      color: var(--primary); text-decoration: none; font-weight: 600;
+    }
+
+    /* ═══════════════════════════════
+       STEP SCREEN SHELL
+    ═══════════════════════════════ */
+    .step-screen {
+      background:
+        radial-gradient(ellipse 80% 40% at 80% -5%, rgba(244,140,37,0.08) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .step-header {
+      padding: 20px 20px 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .back-btn {
+      width: 44px; height: 44px;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: inherit; font-size: 18px;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { border-color: var(--text); color: var(--text); }
+    .back-btn.invisible { visibility: hidden; pointer-events: none; }
+    .step-counter {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .step-skip {
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      transition: color 0.2s; padding: 4px 0;
+    }
+    .step-skip:hover { color: var(--text); }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      padding: 14px 20px 0;
+    }
+    .progress-track {
+      display: flex; gap: 6px;
+    }
+    .progress-pill {
+      flex: 1; height: 3px; border-radius: 99px;
+      background: var(--border); overflow: hidden;
+      position: relative;
+    }
+    .progress-pill.done   { background: var(--primary); }
+    .progress-pill.active { background: var(--border); }
+    .progress-pill.active::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: var(--primary);
+      animation: fillPill 0.45s ease forwards;
+    }
+    @keyframes fillPill { from { transform:scaleX(0); transform-origin:left; } to { transform:scaleX(1); } }
+
+    /* Step illustration */
+    .step-illustration {
+      padding: 24px 20px 0;
+      display: flex; align-items: center; gap: 18px;
+    }
+    .step-icon-circle {
+      width: 56px; height: 56px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      background: var(--primary-dim);
+      border: 1px solid rgba(244,140,37,0.25);
+    }
+    .step-icon-circle svg { width: 28px; height: 28px; stroke: var(--primary); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .step-label-wrap {}
+    .step-eyebrow {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 4px;
+    }
+    .step-title {
+      font-size: 26px; font-weight: 800; line-height: 1.15;
+    }
+    .step-subtitle {
+      font-size: 13px; color: var(--muted); margin-top: 5px; line-height: 1.5;
+    }
+
+    /* Step body */
+    .step-body {
+      flex: 1; padding: 20px 20px 0;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .field-label {
+      display: block; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 10px;
+    }
+
+    /* ── Inputs ── */
+    .input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text); font-family: inherit; font-size: 16px; font-weight: 500;
+      padding: 12px 16px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .input::placeholder { color: var(--muted); font-weight: 400; }
+    .input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(244,140,37,0.15);
+    }
+    .input-row { display: flex; align-items: center; gap: 10px; }
+    .input-row .input { flex: 1; }
+    .input-unit { font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; min-width: 32px; }
+
+    select.input {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7870' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+    }
+    textarea.input { min-height: 90px; resize: vertical; line-height: 1.5; }
+
+    /* ── Gender / option toggle ── */
+    .option-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .option-btn {
+      padding: 14px 12px;
+      border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--muted);
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .option-btn .ob-icon { font-size: 22px; }
+    .option-btn:hover { border-color: var(--primary); color: var(--text); }
+    .option-btn.active {
+      border-color: var(--primary);
+      background: var(--primary-dim);
+      color: var(--primary);
+    }
+
+    /* ── Checkboxes ── */
+    .check-list { display: flex; flex-direction: column; gap: 8px; }
+    .check-item {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+      font-size: 14px; font-weight: 500; color: var(--text); user-select: none;
+    }
+    .check-item:hover { border-color: var(--border-focus); }
+    .check-item input[type="checkbox"] { display: none; }
+    .check-box {
+      width: 22px; height: 22px; border-radius: 7px;
+      border: 2px solid var(--border); background: var(--card);
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .check-item input:checked ~ .check-box { background: var(--primary); border-color: var(--primary); }
+    .check-box::after {
+      content: ''; width: 5px; height: 9px;
+      border: 2px solid #1a1108; border-top: none; border-left: none;
+      transform: rotate(45deg) scaleY(0); transition: transform 0.15s ease; margin-top: -2px;
+    }
+    .check-item input:checked ~ .check-box::after { transform: rotate(45deg) scaleY(1); }
+    .check-item:has(input:checked) { border-color: var(--primary); background: var(--primary-dim); }
+    .check-icon { font-size: 18px; flex-shrink: 0; }
+
+    /* ── Activity chips ── */
+    .chip-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .chip {
+      padding: 14px 12px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: var(--surface);
+      color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .chip .c-icon { font-size: 20px; }
+    .chip:hover { border-color: var(--primary); color: var(--text); }
+    .chip.active { border-color: var(--primary); background: var(--primary-dim); color: var(--primary); }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      border-radius: 12px; border: 1px solid rgba(248,113,113,0.25);
+      background: var(--danger-bg); padding: 14px 16px;
+    }
+    .disclaimer-title { font-size: 13px; font-weight: 700; color: var(--danger); margin-bottom: 4px; }
+    .disclaimer-body  { font-size: 13px; color: rgba(248,113,113,0.8); line-height: 1.5; }
+
+    /* ── Summary tag ── */
+    .summary-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--muted);
+    }
+    .summary-tag span { color: var(--primary); }
+
+    /* ── Field error ── */
+    .field-error { font-size: 12px; font-weight: 600; color: var(--danger); margin-top: 6px; display: none; }
+    .field-error.show { display: block; }
+
+    /* ── Private note ── */
+    .private-note {
+      font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Info highlight ── */
+    .info-row {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--primary-dim);
+      border: 1px solid rgba(244,140,37,0.2);
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 12px; font-weight: 600; color: rgba(244,140,37,0.9);
+    }
+    .info-row svg { width: 14px; height: 14px; stroke: var(--primary); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+    /* ── Step footer ── */
+    .step-footer {
+      padding: 16px 20px;
+      padding-bottom: max(36px, env(safe-area-inset-bottom, 36px));
+    }
+    .btn-next {
+      width: 100%; padding: 16px;
+      border-radius: 14px; border: none;
+      background: var(--primary);
+      color: #1a1108; font-family: inherit;
+      font-size: 16px; font-weight: 800;
+      cursor: pointer; letter-spacing: 0.01em;
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-next:hover  { opacity: 0.92; }
+    .btn-next:active { transform: scale(0.98); }
+    .btn-next:disabled { opacity: 0.38; cursor: not-allowed; }
+
+    /* ═══════════════════════════════
+       FINISH / SUCCESS SCREEN
+    ═══════════════════════════════ */
+    .finish-screen {
+      background:
+        radial-gradient(ellipse 90% 60% at 50% -5%, rgba(244,140,37,0.18) 0%, transparent 65%),
+        var(--bg);
+      align-items: center;
+      justify-content: center;
+      padding: max(48px, env(safe-area-inset-top, 48px)) 28px max(48px, env(safe-area-inset-bottom, 48px));
+      text-align: center;
+      gap: 0;
+    }
+
+    .finish-badge {
+      width: 96px; height: 96px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, #e06b10 100%);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 28px;
+      box-shadow: 0 0 60px rgba(244,140,37,0.4), 0 0 120px rgba(244,140,37,0.15);
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn { from { transform:scale(0.5); opacity:0; } to { transform:scale(1); opacity:1; } }
+    .finish-badge svg { width: 44px; height: 44px; stroke: #1a1108; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .finish-title {
+      font-size: 30px; font-weight: 800; line-height: 1.15; margin-bottom: 10px;
+    }
+    .finish-title em { font-style: normal; color: var(--primary); }
+    .finish-sub {
+      font-size: 15px; color: var(--muted); line-height: 1.6; max-width: 300px;
+    }
+
+    .finish-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; width: 100%; margin: 32px 0;
+    }
+    .finish-stat {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px 10px; text-align: center;
+    }
+    .finish-stat-val { font-size: 20px; font-weight: 800; color: var(--primary); }
+    .finish-stat-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+    .finish-cta {
+      width: 100%;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════ WELCOME SCREEN ═══════ -->
+  <div id="screen-welcome" class="screen welcome-screen active">
+    <div class="welcome-logo">
+      <div class="logo-mark">A</div>
+      <div class="logo-name">Alto</div>
+    </div>
+
+    <div class="welcome-illustration">
+      <div class="rings-wrap">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="ring-center">
+          <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div class="ring-dot"></div>
+        <div class="ring-dot"></div>
+        <div class="ring-dot"></div>
+      </div>
+    </div>
+
+    <div class="welcome-copy">
+      <h1 class="welcome-headline">Your AI-powered<br><em>fitness coach</em></h1>
+      <p class="welcome-sub">Alto learns how you move, adapts to how you feel, and builds a plan that actually fits your life.</p>
+      <div class="welcome-cta">
+        <button class="btn-primary" onclick="goTo('screen-1', 'right')">Get Started →</button>
+        <p class="welcome-login">Already have an account? <a href="#">Sign in</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ STEP 1: IDENTITY ═══════ -->
+  <div id="screen-1" class="screen step-screen">
+    <div class="step-header">
+      <button class="back-btn invisible" onclick="goTo('screen-welcome', 'left')">←</button>
+      <span class="step-counter">Step 1 of 4</span>
+      <button class="step-skip">Skip</button>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-track">
+        <div class="progress-pill active"></div>
+        <div class="progress-pill"></div>
+        <div class="progress-pill"></div>
+        <div class="progress-pill"></div>
+      </div>
+    </div>
+
+    <div class="step-illustration">
+      <div class="step-icon-circle">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <div class="step-label-wrap">
+        <p class="step-eyebrow">Step 1 — Identity</p>
+        <h1 class="step-title">About You</h1>
+        <p class="step-subtitle">Personalize your plan.</p>
+      </div>
+    </div>
+
+    <div class="step-body">
+      <div class="card">
+        <label class="field-label" for="name">Your Name</label>
+        <input id="name" class="input" placeholder="e.g. Alex Rivera" autocomplete="name" />
+      </div>
+
+      <div class="card">
+        <label class="field-label">I identify as</label>
+        <div class="option-grid">
+          <button type="button" id="gender-male" class="option-btn active" onclick="setGender('male')">
+            <span class="ob-icon">♂</span> Male
+          </button>
+          <button type="button" id="gender-female" class="option-btn" onclick="setGender('female')">
+            <span class="ob-icon">♀</span> Female
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="field-label">Body Stats</label>
+
+        <label class="field-label" style="color:var(--muted);margin-bottom:6px;">Age</label>
+        <div class="input-row">
+          <input id="age" type="number" value="25" min="14" class="input" />
+          <span class="input-unit">yrs</span>
+        </div>
+        <p id="age-error" class="field-error">Must be 14 or older.</p>
+
+        <div class="divider"></div>
+
+        <label class="field-label" style="color:var(--muted);margin-bottom:6px;">Height</label>
+        <div class="input-row">
+          <input id="height" type="number" value="68" min="48" max="90" class="input" />
+          <span class="input-unit">in</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <label class="field-label" style="color:var(--muted);margin-bottom:6px;">Weight</label>
+        <div class="input-row">
+          <input id="weight" type="number" value="154" min="70" max="500" class="input" />
+          <span class="input-unit">lb</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-footer">
+      <button class="btn-next" onclick="validateAndNext('screen-1', 'screen-2')">
+        Continue <svg viewBox="0 0 24 24" width="18" height="18" style="stroke:#1a1108;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════ STEP 2: HEALTH ═══════ -->
+  <div id="screen-2" class="screen step-screen">
+    <div class="step-header">
+      <button class="back-btn" onclick="goTo('screen-1', 'left')">←</button>
+      <span class="step-counter">Step 2 of 4</span>
+      <button class="step-skip" onclick="goTo('screen-3', 'right')">Skip</button>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-track">
+        <div class="progress-pill done"></div>
+        <div class="progress-pill active"></div>
+        <div class="progress-pill"></div>
+        <div class="progress-pill"></div>
+      </div>
+    </div>
+
+    <div class="step-illustration">
+      <div class="step-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <div class="step-label-wrap">
+        <p class="step-eyebrow">Step 2 — Health</p>
+        <h1 class="step-title">Health Info</h1>
+        <p class="step-subtitle">Alto keeps your plan safe.</p>
+      </div>
+    </div>
+
+    <div class="step-body">
+      <div class="info-row">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Stays on-device. Used only for AI personalization.
+      </div>
+
+      <div class="check-list">
+        <label class="check-item">
+          <input type="checkbox" class="hc" value="Asthma" />
+          <span class="check-box"></span>
+          <span class="check-icon">🌬️</span>
+          Asthma
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="hc" value="Heart Condition" id="heart-condition" />
+          <span class="check-box"></span>
+          <span class="check-icon">❤️</span>
+          Heart Condition
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="hc" value="Joint Issues" />
+          <span class="check-box"></span>
+          <span class="check-icon">🦵</span>
+          Joint Issues
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="hc" value="Diabetes" />
+          <span class="check-box"></span>
+          <span class="check-icon">🩸</span>
+          Diabetes
+        </label>
+        <label class="check-item">
+          <input type="checkbox" class="hc" value="Other" id="other-condition" />
+          <span class="check-box"></span>
+          <span class="check-icon">➕</span>
+          Other
+        </label>
+      </div>
+
+      <div id="other-box" class="card hidden">
+        <label class="field-label">Describe your condition</label>
+        <textarea class="input" placeholder="Tell Alto what to consider..."></textarea>
+      </div>
+
+      <div id="heart-disclaimer" class="disclaimer hidden">
+        <p class="disclaimer-title">⚠ Medical Disclaimer</p>
+        <p class="disclaimer-body">Please consult a physician before starting intense physical activity.</p>
+      </div>
+    </div>
+
+    <div class="step-footer">
+      <button class="btn-next" onclick="goTo('screen-3', 'right')">
+        Continue <svg viewBox="0 0 24 24" width="18" height="18" style="stroke:#1a1108;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════ STEP 3: ACTIVITY ═══════ -->
+  <div id="screen-3" class="screen step-screen">
+    <div class="step-header">
+      <button class="back-btn" onclick="goTo('screen-2', 'left')">←</button>
+      <span class="step-counter">Step 3 of 4</span>
+      <button class="step-skip" onclick="goTo('screen-4', 'right')">Skip</button>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-track">
+        <div class="progress-pill done"></div>
+        <div class="progress-pill done"></div>
+        <div class="progress-pill active"></div>
+        <div class="progress-pill"></div>
+      </div>
+    </div>
+
+    <div class="step-illustration">
+      <div class="step-icon-circle">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="step-label-wrap">
+        <p class="step-eyebrow">Step 3 — Activity</p>
+        <h1 class="step-title">Your Rhythm</h1>
+        <p class="step-subtitle">How often do you work out?</p>
+      </div>
+    </div>
+
+    <div class="step-body">
+      <div class="card">
+        <label class="field-label">Activity Level</label>
+        <div class="chip-grid">
+          <button type="button" class="chip active preset" data-preset="custom">
+            <span class="c-icon">🎯</span> Custom
+          </button>
+          <button type="button" class="chip preset" data-preset="not_very_active">
+            <span class="c-icon">🚶</span> Light
+          </button>
+          <button type="button" class="chip preset" data-preset="never_workout">
+            <span class="c-icon">🛋️</span> Just starting
+          </button>
+          <button type="button" class="chip preset" data-preset="very_active">
+            <span class="c-icon">🏃</span> Very active
+          </button>
+        </div>
+
+        <div id="custom-activity" style="margin-top:14px;">
+          <div class="divider" style="margin-top:0;"></div>
+          <label class="field-label" style="margin-top:12px;">Custom frequency</label>
+          <div class="input-row">
+            <input id="activity-value" type="number" value="3" min="0" max="14" class="input" style="max-width:90px;" />
+            <span class="input-unit" style="min-width:auto;">times /</span>
+            <select id="activity-unit" class="input">
+              <option value="week">week</option>
+              <option value="month">month</option>
+            </select>
+          </div>
+        </div>
+
+        <p id="activity-summary" class="summary-tag" style="margin-top:12px;">
+          📊 <span>3 times / week</span>
+        </p>
+      </div>
+
+      <div class="card">
+        <label class="field-label">Preferred Workouts</label>
+        <div class="chip-grid">
+          <button type="button" class="chip active workout-chip">
+            <span class="c-icon">🏃</span> Running
+          </button>
+          <button type="button" class="chip workout-chip">
+            <span class="c-icon">🏋️</span> Weights
+          </button>
+          <button type="button" class="chip active workout-chip">
+            <span class="c-icon">🧘</span> Yoga
+          </button>
+          <button type="button" class="chip workout-chip">
+            <span class="c-icon">🚴</span> Cycling
+          </button>
+          <button type="button" class="chip workout-chip">
+            <span class="c-icon">🏊</span> Swimming
+          </button>
+          <button type="button" class="chip workout-chip">
+            <span class="c-icon">🥊</span> HIIT
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-footer">
+      <button class="btn-next" id="next-3" onclick="advanceFromStep3()">
+        Continue <svg viewBox="0 0 24 24" width="18" height="18" style="stroke:#1a1108;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════ STEP 4 (female only): CYCLE ═══════ -->
+  <div id="screen-4" class="screen step-screen">
+    <div class="step-header">
+      <button class="back-btn" onclick="goTo('screen-3', 'left')">←</button>
+      <span class="step-counter">Step 4 of 4</span>
+      <button class="step-skip" onclick="goTo('screen-finish', 'right')">Skip</button>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-track">
+        <div class="progress-pill done"></div>
+        <div class="progress-pill done"></div>
+        <div class="progress-pill done"></div>
+        <div class="progress-pill active"></div>
+      </div>
+    </div>
+
+    <div class="step-illustration">
+      <div class="step-icon-circle">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <div class="step-label-wrap">
+        <p class="step-eyebrow">Step 4 — Cycle</p>
+        <h1 class="step-title">Cycle Details</h1>
+        <p class="step-subtitle">Tune intensity around your cycle.</p>
+      </div>
+    </div>
+
+    <div class="step-body">
+      <div class="info-row">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Alto adapts your plan to your cycle phases — safely.
+      </div>
+
+      <div class="card">
+        <label class="field-label" style="margin-bottom:6px;">Period Duration</label>
+        <div class="input-row">
+          <input id="period-days" type="number" value="5" min="1" max="14" class="input" />
+          <span class="input-unit">days</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <label class="field-label" style="margin-bottom:6px;">Cycle Length</label>
+        <div class="input-row">
+          <input id="cycle-length" type="number" value="28" min="20" max="40" class="input" />
+          <span class="input-unit">days</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <label class="field-label" for="last-period" style="margin-bottom:6px;">Last Period Date</label>
+        <input id="last-period" type="date" class="input" />
+      </div>
+    </div>
+
+    <div class="step-footer">
+      <button class="btn-next" onclick="goTo('screen-finish', 'right')">
+        Finish & Build My Plan 🚀
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════ FINISH SCREEN ═══════ -->
+  <div id="screen-finish" class="screen finish-screen">
+    <div class="finish-badge">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h1 class="finish-title">You're all set,<br><em id="finish-name">Alex</em>! 🎉</h1>
+    <p class="finish-sub">Alto is building your personalized training plan. Get ready to crush it.</p>
+
+    <div class="finish-stats">
+      <div class="finish-stat">
+        <div class="finish-stat-val">AI</div>
+        <div class="finish-stat-lbl">Powered</div>
+      </div>
+      <div class="finish-stat">
+        <div class="finish-stat-val">100%</div>
+        <div class="finish-stat-lbl">Personalized</div>
+      </div>
+      <div class="finish-stat">
+        <div class="finish-stat-val">0</div>
+        <div class="finish-stat-lbl">Days to start</div>
+      </div>
+    </div>
+
+    <div class="finish-cta">
+      <button class="btn-primary" onclick="window.location='home_dashboard_updated.html'">
+        Go to Dashboard →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let gender = 'male';
+    let activityPreset = 'custom';
+
+    /* ── Navigation ── */
+    function goTo(screenId, direction) {
+      const current = document.querySelector('.screen.active');
+      const next    = document.getElementById(screenId);
+      if (!current || !next) return;
+
+      current.classList.remove('active');
+      current.classList.add(direction === 'right' ? 'exit-left' : '');
+      setTimeout(() => current.classList.remove('exit-left'), 300);
+
+      next.classList.add(direction === 'right' ? 'enter-right' : 'enter-left');
+      requestAnimationFrame(() => {
+        next.classList.remove('enter-right', 'enter-left');
+        next.classList.add('active');
+      });
+
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
+    /* ── Step 1 validation ── */
+    function validateAndNext(from, to) {
+      const name  = document.getElementById('name').value.trim();
+      const age   = Number(document.getElementById('age').value || 0);
+      const ageErr = document.getElementById('age-error');
+      ageErr.classList.toggle('show', age < 14);
+      if (!name || age < 14) return;
+      goTo(to, 'right');
+    }
+
+    /* ── Step 3 → decide if cycle step needed ── */
+    function advanceFromStep3() {
+      goTo(gender === 'female' ? 'screen-4' : 'screen-finish', 'right');
+      if (gender !== 'female') {
+        const name = document.getElementById('name').value.trim().split(' ')[0] || 'there';
+        document.getElementById('finish-name').textContent = name;
+      }
+    }
+
+    /* ── Gender ── */
+    function setGender(g) {
+      gender = g;
+      document.getElementById('gender-male').classList.toggle('active', g === 'male');
+      document.getElementById('gender-female').classList.toggle('active', g === 'female');
+    }
+
+    /* ── Activity presets ── */
+    document.querySelectorAll('.preset').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.preset').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        activityPreset = btn.dataset.preset;
+        const customDiv = document.getElementById('custom-activity');
+        if (customDiv) customDiv.classList.toggle('hidden', activityPreset !== 'custom');
+        updateActivitySummary();
+      };
+    });
+
+    /* ── Workout chips toggle ── */
+    document.querySelectorAll('.workout-chip').forEach(btn => {
+      btn.onclick = () => btn.classList.toggle('active');
+    });
+
+    function updateActivitySummary() {
+      const val  = Number(document.getElementById('activity-value')?.value || 0);
+      const unit = document.getElementById('activity-unit')?.value || 'week';
+      const map  = { custom: `${val} ${val===1?'time':'times'} / ${unit}`, not_very_active: 'Light activity', never_workout: 'Just starting out', very_active: 'Very active' };
+      const el   = document.getElementById('activity-summary');
+      if (el) el.innerHTML = `📊 <span>${map[activityPreset] || ''}</span>`;
+    }
+
+    document.getElementById('activity-value')?.addEventListener('input', updateActivitySummary);
+    document.getElementById('activity-unit')?.addEventListener('change', updateActivitySummary);
+
+    /* ── Health checkboxes ── */
+    document.getElementById('other-condition')?.addEventListener('change', function() {
+      document.getElementById('other-box')?.classList.toggle('hidden', !this.checked);
+    });
+    document.getElementById('heart-condition')?.addEventListener('change', function() {
+      document.getElementById('heart-disclaimer')?.classList.toggle('hidden', !this.checked);
+    });
+
+    /* ── Finish name ── */
+    document.getElementById('screen-finish').addEventListener('animationend', () => {
+      const name = document.getElementById('name')?.value.trim().split(' ')[0] || 'there';
+      document.getElementById('finish-name').textContent = name;
+    }, { once: false });
+
+    /* ── Init ── */
+    document.getElementById('last-period').value = new Date().toISOString().split('T')[0];
+    updateActivitySummary();
+  </script>
+</body>
+</html>
