@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alto — Product Requirements Document</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #1a1108;
+      --surface:     #231809;
+      --card:        #2c1f10;
+      --border:      #4a3018;
+      --primary:     #f48c25;
+      --primary-dim: rgba(244,140,37,0.12);
+      --text:        #f0ede8;
+      --muted:       #7a7870;
+      --green:       #4ade80;
+      --blue:        #60a5fa;
+      --red:         #f87171;
+      --code-bg:     #1f1509;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", ui-sans-serif, system-ui;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.7;
+    }
+
+    /* ── Layout ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px; flex-shrink: 0;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 28px 20px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 32px;
+    }
+    .logo-mark {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: #1a1108;
+      flex-shrink: 0;
+    }
+    .logo-text { font-size: 18px; font-weight: 800; }
+    .logo-text span { color: var(--primary); }
+
+    .nav-group { margin-bottom: 24px; }
+    .nav-group-title {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 8px; padding-left: 8px;
+    }
+    .nav-link {
+      display: block; padding: 7px 10px;
+      border-radius: 8px; color: var(--muted);
+      text-decoration: none; font-size: 13px; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .nav-link:hover { background: var(--primary-dim); color: var(--text); }
+    .nav-link.active { background: var(--primary-dim); color: var(--primary); font-weight: 700; }
+
+    .sidebar-badge {
+      display: inline-flex; align-items: center;
+      background: var(--primary-dim);
+      border: 1px solid rgba(244,140,37,0.25);
+      color: var(--primary); font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 99px;
+      margin-top: 24px;
+    }
+
+    /* ── Main ── */
+    .main {
+      margin-left: 260px;
+      flex: 1;
+      max-width: 900px;
+      padding: 56px 60px 120px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 64px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--primary);
+      margin-bottom: 14px;
+    }
+    .hero-title {
+      font-size: 52px; font-weight: 800; line-height: 1.05;
+      letter-spacing: -0.02em; margin-bottom: 16px;
+    }
+    .hero-title em { font-style: normal; color: var(--primary); }
+    .hero-tagline {
+      font-size: 18px; color: var(--muted); line-height: 1.6;
+      max-width: 600px; margin-bottom: 28px;
+    }
+    .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 99px;
+      font-size: 12px; font-weight: 700;
+      border: 1px solid;
+    }
+    .badge.orange { background: var(--primary-dim); border-color: rgba(244,140,37,0.3); color: var(--primary); }
+    .badge.green  { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.25); color: var(--green); }
+    .badge.blue   { background: rgba(96,165,250,0.08); border-color: rgba(96,165,250,0.25); color: var(--blue); }
+
+    /* ── Section ── */
+    .section { margin-bottom: 72px; scroll-margin-top: 32px; }
+    h2 {
+      font-size: 28px; font-weight: 800; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    h2 .h2-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--primary-dim); display: flex; align-items: center;
+      justify-content: center; font-size: 16px; flex-shrink: 0;
+    }
+    h3 {
+      font-size: 18px; font-weight: 700; margin: 28px 0 12px;
+      color: var(--text);
+    }
+    p { margin-bottom: 14px; color: rgba(240,237,232,0.85); }
+    strong { color: var(--text); font-weight: 700; }
+    em.highlight { font-style: normal; color: var(--primary); }
+
+    /* ── Section divider ── */
+    .section-divider {
+      height: 1px; background: var(--border); margin-bottom: 28px;
+    }
+
+    /* ── Callout ── */
+    .callout {
+      background: var(--primary-dim);
+      border: 1px solid rgba(244,140,37,0.25);
+      border-left: 3px solid var(--primary);
+      border-radius: 12px; padding: 18px 20px;
+      margin: 20px 0; font-size: 15px;
+      color: rgba(244,140,37,0.95); line-height: 1.6;
+    }
+    .callout strong { color: var(--primary); }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+      background: var(--card); padding: 10px 14px;
+      text-align: left; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--primary); border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 11px 14px; border-bottom: 1px solid rgba(74,48,24,0.5);
+      color: rgba(240,237,232,0.85); vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(244,140,37,0.03); }
+    table { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+
+    /* ── Code blocks ── */
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px 22px;
+      font-family: "JetBrains Mono", monospace; font-size: 13px;
+      line-height: 1.7; overflow-x: auto; margin: 16px 0;
+      color: rgba(240,237,232,0.8);
+    }
+    code {
+      font-family: "JetBrains Mono", monospace; font-size: 13px;
+      background: var(--code-bg); padding: 2px 6px;
+      border-radius: 4px; color: var(--primary);
+    }
+
+    /* ── Lists ── */
+    ul, ol { padding-left: 22px; margin-bottom: 14px; }
+    li { margin-bottom: 6px; color: rgba(240,237,232,0.85); }
+
+    /* ── Agent cards ── */
+    .agent-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-bottom: 16px;
+    }
+    .agent-header {
+      display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px;
+    }
+    .agent-icon {
+      width: 48px; height: 48px; border-radius: 13px;
+      background: var(--primary-dim); border: 1px solid rgba(244,140,37,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .agent-meta {}
+    .agent-name { font-size: 17px; font-weight: 800; }
+    .agent-file { font-size: 11px; color: var(--muted); font-family: "JetBrains Mono", monospace; margin-top: 2px; }
+    .agent-type-badge {
+      display: inline-flex; margin-top: 5px;
+      padding: 2px 8px; border-radius: 99px;
+      font-size: 10px; font-weight: 700;
+      background: var(--primary-dim); color: var(--primary);
+      border: 1px solid rgba(244,140,37,0.25);
+    }
+    .agent-desc { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* ── Use case cards ── */
+    .usecase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+    .usecase-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px;
+    }
+    .usecase-emoji { font-size: 24px; margin-bottom: 10px; }
+    .usecase-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .usecase-who { font-size: 12px; color: var(--primary); font-weight: 600; margin-bottom: 8px; }
+    .usecase-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+    /* ── Architecture box ── */
+    .arch-box {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12.5px; line-height: 1.8; overflow-x: auto;
+      color: rgba(240,237,232,0.75);
+    }
+    .arch-box .ac-primary { color: var(--primary); font-weight: 700; }
+    .arch-box .ac-green   { color: var(--green); }
+    .arch-box .ac-blue    { color: var(--blue); }
+    .arch-box .ac-muted   { color: var(--muted); }
+
+    /* ── Screens grid ── */
+    .screens-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 20px 0; }
+    .screen-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden;
+    }
+    .screen-preview {
+      height: 160px; background: var(--surface);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; border-bottom: 1px solid var(--border);
+    }
+    .screen-label { padding: 12px; }
+    .screen-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    .screen-desc { font-size: 11px; color: var(--muted); }
+    .screen-link {
+      display: inline-block; margin-top: 6px;
+      font-size: 11px; font-weight: 600; color: var(--primary);
+      text-decoration: none;
+    }
+    .screen-link:hover { text-decoration: underline; }
+
+    /* ── Stat row ── */
+    .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin: 20px 0; }
+    .stat-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 16px; text-align: center;
+    }
+    .stat-val { font-size: 28px; font-weight: 800; color: var(--primary); }
+    .stat-lbl { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+    /* ── Roadmap ── */
+    .roadmap-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid rgba(74,48,24,0.4);
+    }
+    .roadmap-item:last-child { border-bottom: none; }
+    .roadmap-dot {
+      width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+      margin-top: 2px; display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+    .roadmap-dot.done { background: var(--green); color: #1a1108; }
+    .roadmap-dot.soon { background: var(--primary); color: #1a1108; }
+    .roadmap-dot.later { background: var(--border); color: var(--muted); }
+    .roadmap-text { font-size: 14px; }
+    .roadmap-tag { font-size: 10px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">A</div>
+      <div class="logo-text">Alto <span>PRD</span></div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">Overview</div>
+      <a href="#vision" class="nav-link active">Vision & Mission</a>
+      <a href="#problem" class="nav-link">The Problem</a>
+      <a href="#hypothesis" class="nav-link">Hypothesis</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">Product</div>
+      <a href="#usecases" class="nav-link">Use Cases</a>
+      <a href="#features" class="nav-link">Key Features</a>
+      <a href="#screens" class="nav-link">App Screens</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">Technical</div>
+      <a href="#architecture" class="nav-link">Architecture</a>
+      <a href="#agents" class="nav-link">Agents</a>
+      <a href="#stack" class="nav-link">Tech Stack</a>
+      <a href="#privacy" class="nav-link">Privacy</a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-group-title">More</div>
+      <a href="#roadmap" class="nav-link">Roadmap</a>
+    </div>
+
+    <div class="sidebar-badge">v1.0 · iOS 17+</div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero" id="vision">
+      <div class="hero-eyebrow">Product Requirements Document · April 2026</div>
+      <h1 class="hero-title">Alto<br><em>AI Fitness Coach</em></h1>
+      <p class="hero-tagline">Your AI-powered fitness coach that creates personalized workout and nutrition plans, learns from your progress, and adapts in real time so you always train smarter.</p>
+      <div class="hero-badges">
+        <span class="badge orange">🧠 Gemini AI</span>
+        <span class="badge green">🍎 iOS 17+</span>
+        <span class="badge blue">🔒 Privacy First</span>
+        <span class="badge orange">📍 On-Device</span>
+        <span class="badge green">⚡ Agentic</span>
+        <span class="badge blue">🩺 HealthKit</span>
+      </div>
+    </div>
+
+    <!-- Vision & Mission -->
+    <div class="section">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🌟</span> Vision & Mission</h2>
+
+      <h3>Vision</h3>
+      <p>A world where every person — regardless of budget, access, or experience — has a world-class fitness coach in their pocket that actually knows them.</p>
+
+      <h3>Mission</h3>
+      <p>Build an AI-native fitness experience that removes the friction between intention and action. Alto listens, adapts, and shows up for users every single day — not just when they remember to open an app.</p>
+
+      <h3>Core Belief</h3>
+      <div class="callout">
+        <strong>Fitness plans fail people. People don't fail fitness plans.</strong><br/>
+        Generic plans ignore how you slept, how stressed you are, where you are in your cycle, and what the weather looks like outside. Alto doesn't. It treats you like a person, not a profile.
+      </div>
+    </div>
+
+    <!-- Problem -->
+    <div class="section" id="problem">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">⚠️</span> The Problem</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Problem</th><th>Current Reality</th><th>What Alto Does</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Generic plans</strong></td><td>1-size-fits-all programs</td><td>Personalized daily plans from real signals</td></tr>
+            <tr><td><strong>No adaptation</strong></td><td>Same plan whether you slept 4hrs or 8hrs</td><td>Readiness score adjusts every single day</td></tr>
+            <tr><td><strong>Nutrition guesswork</strong></td><td>Manual calorie logging is tedious</td><td>Photo-based AI macro estimation in seconds</td></tr>
+            <tr><td><strong>Weather-blind coaching</strong></td><td>Outdoor run scheduled in a thunderstorm</td><td>Automatically pivots to indoor alternatives</td></tr>
+            <tr><td><strong>Cycle-ignorant training</strong></td><td>Same intensity regardless of hormonal phase</td><td>Training adapts to menstrual cycle phases</td></tr>
+            <tr><td><strong>No recovery intelligence</strong></td><td>Rest days are arbitrary</td><td>Evidence-based recovery triggers from effort gaps</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Hypothesis -->
+    <div class="section" id="hypothesis">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🔬</span> Our Hypothesis</h2>
+
+      <div class="callout">
+        If we give an AI coach access to the right real-time signals — sleep, stress, mood, weather, cycle phase, and calorie data — it will generate better daily training decisions than any static 12-week program.
+      </div>
+
+      <h3>Supporting Bets</h3>
+      <ul>
+        <li><strong>Readiness > Rigidity</strong> — Users who train based on daily readiness will sustain habits longer than those on fixed schedules.</li>
+        <li><strong>Friction kills compliance</strong> — Removing manual logging (via voice and photo) increases daily check-in rates by 3–5×.</li>
+        <li><strong>Personalization compounds</strong> — Each data signal multiplies plan quality; the more Alto knows, the better it gets.</li>
+        <li><strong>Cycle-aware training reduces injury</strong> — Adapting intensity to hormonal phases reduces overtraining and improves long-term adherence for female athletes.</li>
+      </ul>
+    </div>
+
+    <!-- Use Cases -->
+    <div class="section" id="usecases">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">👥</span> Use Cases</h2>
+      <div class="usecase-grid">
+        <div class="usecase-card">
+          <div class="usecase-emoji">💼</div>
+          <div class="usecase-title">The Busy Professional</div>
+          <div class="usecase-who">Works 9–6 · high stress · inconsistent sleep</div>
+          <div class="usecase-desc">Detects low readiness from sleep and stress. Swaps a planned 10K run for a 25-min mobility session. Sends a compassionate nudge instead of a guilt trip.</div>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-emoji">🏃</div>
+          <div class="usecase-title">The Marathon Trainer</div>
+          <div class="usecase-who">Training for a race · needs periodization</div>
+          <div class="usecase-desc">Builds a 4-phase goal timeline. Tracks weekly mileage increases and warns if the ramp rate exceeds 15% (injury risk). Adjusts taper week automatically.</div>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-emoji">🌸</div>
+          <div class="usecase-title">The Postpartum Athlete</div>
+          <div class="usecase-who">Returning to fitness · cycle-aware needs</div>
+          <div class="usecase-desc">Menstrual cycle phase detection. Caps RPE at 7 during luteal phase. Prioritizes recovery and mobility when readiness is low.</div>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-emoji">📸</div>
+          <div class="usecase-title">The Calorie Tracker</div>
+          <div class="usecase-who">Focused on body composition · macro-conscious</div>
+          <div class="usecase-desc">Point camera at meal → AI returns calories, protein, carbs, fat in seconds. Cross-references daily calorie target and suggests add-on exercises if needed.</div>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-emoji">🌧️</div>
+          <div class="usecase-title">The Outdoor Runner</div>
+          <div class="usecase-who">Loves running outside · weather-dependent</div>
+          <div class="usecase-desc">Checks rain probability via WeatherKit before generating the plan. If rain > 60%, auto-pivots outdoor run to an indoor treadmill or circuit alternative.</div>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-emoji">⌚</div>
+          <div class="usecase-title">The Data-Driven Athlete</div>
+          <div class="usecase-who">Apple Watch user · biometric-focused</div>
+          <div class="usecase-desc">Pulls resting heart rate, HRV, sleep stages, and steps from HealthKit. Uses biometrics as primary readiness input alongside self-reported mood.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key Features -->
+    <div class="section" id="features">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">⚡</span> Key Features</h2>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-val">10+</div>
+          <div class="stat-lbl">Real-time signals</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">6</div>
+          <div class="stat-lbl">AI agents</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">39</div>
+          <div class="stat-lbl">Unit tests</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">0</div>
+          <div class="stat-lbl">Third-party trackers</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>🧠 AI Orchestration</strong></td><td>Gemini-powered daily plan generation from 10+ real-time signals</td></tr>
+            <tr><td><strong>📸 Macro Vision</strong></td><td>Photo-based meal analysis — point, shoot, get macros instantly</td></tr>
+            <tr><td><strong>🔄 Smart Pivoting</strong></td><td>Automatically adjusts plans based on weather, readiness, and cycle phase</td></tr>
+            <tr><td><strong>🗣️ Voice Logging</strong></td><td>Log workouts by speaking — parsed by on-device NLP</td></tr>
+            <tr><td><strong>🌤️ Weather Awareness</strong></td><td>WeatherKit integration — plans adapt to real forecast</td></tr>
+            <tr><td><strong>❤️ HealthKit Sync</strong></td><td>Sleep, heart rate, steps, and cycle data from Apple Health</td></tr>
+            <tr><td><strong>🎯 Goal Timelines</strong></td><td>4-phase periodization: Base → Build → Peak → Taper</td></tr>
+            <tr><td><strong>🔒 Privacy First</strong></td><td>All data stays on-device. No analytics. No tracking. No ads.</td></tr>
+            <tr><td><strong>📴 Offline Fallback</strong></td><td>Rule-based orchestration works without internet connection</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- App Screens -->
+    <div class="section" id="screens">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">📱</span> App Screens</h2>
+
+      <div class="screens-grid">
+        <div class="screen-card">
+          <div class="screen-preview">🚀</div>
+          <div class="screen-label">
+            <div class="screen-name">Onboarding</div>
+            <div class="screen-desc">4-step animated flow with welcome screen</div>
+            <a href="onboarding_journey_stitched.html" class="screen-link" target="_blank">Open prototype →</a>
+          </div>
+        </div>
+        <div class="screen-card">
+          <div class="screen-preview">🏠</div>
+          <div class="screen-label">
+            <div class="screen-name">Dashboard</div>
+            <div class="screen-desc">Daily AI plan, nutrition, weather, recovery</div>
+            <a href="home_dashboard_updated.html" class="screen-link" target="_blank">Open prototype →</a>
+          </div>
+        </div>
+        <div class="screen-card">
+          <div class="screen-preview">🎯</div>
+          <div class="screen-label">
+            <div class="screen-name">Goals</div>
+            <div class="screen-desc">Multi-goal tracking with phase timelines</div>
+            <a href="goals_multi.html" class="screen-link" target="_blank">Open prototype →</a>
+          </div>
+        </div>
+        <div class="screen-card">
+          <div class="screen-preview">👤</div>
+          <div class="screen-label">
+            <div class="screen-name">Profile</div>
+            <div class="screen-desc">Stats, body data, goals, settings</div>
+            <a href="profile.html" class="screen-link" target="_blank">Open prototype →</a>
+          </div>
+        </div>
+      </div>
+
+      <h3>Onboarding Journey</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Step</th><th>Screen</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Welcome</td><td>Animated logo + rings</td><td>Brand impression + CTA</td></tr>
+            <tr><td>Step 1</td><td>Identity</td><td>Name, gender, age, height, weight</td></tr>
+            <tr><td>Step 2</td><td>Health Info</td><td>Conditions (asthma, joint issues, heart, diabetes)</td></tr>
+            <tr><td>Step 3</td><td>Activity Rhythm</td><td>Workout frequency + preferred workout types</td></tr>
+            <tr><td>Step 4 *(female)*</td><td>Cycle Details</td><td>Period duration, cycle length, last period date</td></tr>
+            <tr><td>Finish</td><td>Success screen</td><td>Personalized completion with name + stats</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="section" id="architecture">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🏗️</span> Agentic Architecture</h2>
+      <p>Alto's intelligence is built on a multi-agent pipeline that runs every morning when the user opens the app. Each agent has a single responsibility and a defined input/output contract.</p>
+
+      <div class="arch-box">
+<span class="ac-primary">┌─────────────────────────────────────────────────────────────────────┐</span>
+<span class="ac-primary">│                      ALTO AGENTIC PIPELINE                          │</span>
+<span class="ac-primary">└─────────────────────────────────────────────────────────────────────┘</span>
+
+<span class="ac-green">  [1] DATA COLLECTION</span>        <span class="ac-muted">Signal sources gather real-time context</span>
+       ├── HealthKit          <span class="ac-muted">→ sleep hours, resting HR, steps, cycle phase</span>
+       ├── WeatherKit         <span class="ac-muted">→ rain probability, temperature, conditions</span>
+       ├── Location           <span class="ac-muted">→ indoor / outdoor context</span>
+       └── User check-in      <span class="ac-muted">→ soreness (1–5), stress (1–5), mood (1–5)</span>
+                │
+                ▼
+<span class="ac-green">  [2] READINESS SCORING</span>       <span class="ac-muted">Produces a 0–100 readiness score</span>
+       ├── soreness  × 0.40
+       ├── stress    × 0.30
+       ├── mood      × 0.30
+       └── luteal    − 10 pts
+                │
+                ▼
+<span class="ac-green">  [3] PIVOT ENGINE</span>            <span class="ac-muted">Hard safety overrides before AI runs</span>
+       ├── readiness &lt; 40?    <span class="ac-muted">→ REST &amp; WALK, no exceptions</span>
+       ├── rain &gt; 60%?        <span class="ac-muted">→ INDOOR alternative</span>
+       ├── sleep &lt; 6.5 hrs?   <span class="ac-muted">→ REDUCE intensity</span>
+       └── luteal phase?      <span class="ac-muted">→ CAP RPE at 7, −10% duration</span>
+                │
+                ▼
+<span class="ac-primary">  [4] ORCHESTRATOR AGENT       Gemini 1.5 Pro generates the daily plan</span>
+       ├── Input: full context prompt (profile + signals + environment)
+       ├── System rules: safety overrides, calorie targets, pivot flags
+       ├── Output: workout name, duration, activities, RPE, coach note
+       └── Fallback: SentinelOrchestrator (rule-based, works offline)
+                │
+                ▼
+<span class="ac-blue">  [5] EFFORT GAP EVALUATION    Post-workout analysis (runs next morning)</span>
+       ├── achieved / target &lt; 0.50? <span class="ac-muted">→ recovery trigger</span>
+       ├── high effort on easy day?  <span class="ac-muted">→ compassionate re-engagement</span>
+       └── → tomorrow's plan adjusted accordingly
+                │
+                ▼
+<span class="ac-green">  [6] PLAN DELIVERY</span>
+       ├── Dashboard updated with today's plan
+       ├── Push notification: headline + coach note
+       └── Onboarding audit: ramp rate &gt; 15%? → recommend extension
+      </div>
+    </div>
+
+    <!-- Agents -->
+    <div class="section" id="agents">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🤖</span> Agents & Their Roles</h2>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">🧠</div>
+          <div class="agent-meta">
+            <div class="agent-name">Orchestrator Agent</div>
+            <div class="agent-file">ClaudeOrchestrationService.swift</div>
+            <span class="agent-type-badge">AI Agent · Gemini 1.5 Pro</span>
+          </div>
+        </div>
+        <p class="agent-desc">The brain. Generates a complete daily training plan from 10+ signals. Takes user profile, readiness score, weather, cycle phase, calorie target, and goal phase — outputs a full workout plan with headline, activities, RPE, and a personalized coaching note.</p>
+        <pre>{
+  "headline":    "Easy Recovery Run",
+  "why":         "You slept 6h and flagged moderate soreness — keeping it light.",
+  "workoutName": "30-min Easy Jog",
+  "duration":    30,
+  "calorieTarget": 420,
+  "coachNote":   "Recovery days are where the gains are made. Trust the process."
+}</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">⚙️</div>
+          <div class="agent-meta">
+            <div class="agent-name">Sentinel Orchestrator</div>
+            <div class="agent-file">OrchestratorAgent.swift</div>
+            <span class="agent-type-badge">Rule-based Agent · Offline Fallback</span>
+          </div>
+        </div>
+        <p class="agent-desc">Mirrors the AI orchestrator's behaviour when no API key is configured or there's no internet. Implements readiness scoring, pivot logic, onboarding audits, and effort gap evaluation deterministically — no AI required.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Function</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>readinessScore()</code></td><td>Weighted scoring: soreness (40%) + stress (30%) + mood (30%) − luteal</td></tr>
+              <tr><td><code>pivotTaskIfNeeded()</code></td><td>Applies safety rules deterministically</td></tr>
+              <tr><td><code>auditOnboarding()</code></td><td>Flags injury risk if weekly increase &gt; 15%</td></tr>
+              <tr><td><code>evaluateEffortGap()</code></td><td>Post-workout analysis — triggers compassion or recovery messages</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">🔀</div>
+          <div class="agent-meta">
+            <div class="agent-name">Pivot Engine</div>
+            <div class="agent-file">PivotEngine.swift</div>
+            <span class="agent-type-badge">Decision Agent</span>
+          </div>
+        </div>
+        <p class="agent-desc">Binary pivot/no-pivot decisions based on environmental signals. Runs before the orchestrator to apply hard overrides. Also finds the next high-readiness date for scheduling make-up sessions.</p>
+        <pre>evaluate(sleepHours: 5.8, rainProbability: 0.72)
+→ PivotDecision.pivot(reasons: ["Low sleep detected", "Rain forecast"])
+
+nextHighReadinessDate(projections)
+→ Scans upcoming days → returns first date with HIGH readiness</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">📸</div>
+          <div class="agent-meta">
+            <div class="agent-name">Macro Vision Agent</div>
+            <div class="agent-file">MacroVisionService.swift</div>
+            <span class="agent-type-badge">Vision AI Agent · Gemini Vision</span>
+          </div>
+        </div>
+        <p class="agent-desc">Analyses meal photos and returns macro estimates in under 2 seconds. Image is base64-encoded and sent to Gemini Vision. Returns structured JSON with calories, protein, carbs, and fat. Temperature set to 0.4 for conservative, accurate estimates.</p>
+        <pre>// User taps camera → photo captured
+→ base64 encode image
+→ Gemini Vision API call
+→ { "calories": 520, "proteinGrams": 34, "carbsGrams": 48, "fatGrams": 18 }
+→ Added to daily nutrition total</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">🗣️</div>
+          <div class="agent-meta">
+            <div class="agent-name">Voice Workout Parser</div>
+            <div class="agent-file">VoiceWorkoutParser.swift</div>
+            <span class="agent-type-badge">NLP Agent · On-Device</span>
+          </div>
+        </div>
+        <p class="agent-desc">Converts spoken workout descriptions into structured data using on-device regex-based NLP. No internet required. Handles running, strength, cycling, and swimming patterns.</p>
+        <pre>"I ran 5 miles in 45 minutes"
+→ { type: run, distance: 5, unit: miles, duration: 45 }
+
+"Did 3 sets of 12 bench press at 135 pounds"
+→ { type: strength, sets: 3, reps: 12, exercise: "bench press", weight: 135 }</pre>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">📅</div>
+          <div class="agent-meta">
+            <div class="agent-name">Goal Timeline Generator</div>
+            <div class="agent-file">GoalTimelineGenerator.swift</div>
+            <span class="agent-type-badge">Planning Agent</span>
+          </div>
+        </div>
+        <p class="agent-desc">Takes a goal name + target date and generates a 4-phase periodized training timeline. Audits if weekly training increase exceeds 15% — if so, flags injury risk and recommends extending the timeline.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Phase</th><th>Duration</th><th>Focus</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Base</strong></td><td>25% of total time</td><td>Aerobic foundation, low intensity</td></tr>
+              <tr><td><strong>Build</strong></td><td>40% of total time</td><td>Volume + intensity increase</td></tr>
+              <tr><td><strong>Peak</strong></td><td>25% of total time</td><td>Race-specific workouts, max load</td></tr>
+              <tr><td><strong>Taper</strong></td><td>10% of total time</td><td>Reduce volume, maintain intensity</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="section" id="stack">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🛠️</span> Tech Stack</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Language</strong></td><td>Swift 5.9</td></tr>
+            <tr><td><strong>UI Framework</strong></td><td>SwiftUI</td></tr>
+            <tr><td><strong>Architecture</strong></td><td>MVVM + Service Locator</td></tr>
+            <tr><td><strong>AI / LLM</strong></td><td>Google Gemini 1.5 Flash · 2.0 Flash · 1.5 Pro</td></tr>
+            <tr><td><strong>Database</strong></td><td>Supabase (PostgreSQL)</td></tr>
+            <tr><td><strong>Health Data</strong></td><td>Apple HealthKit</td></tr>
+            <tr><td><strong>Weather</strong></td><td>Apple WeatherKit</td></tr>
+            <tr><td><strong>Location</strong></td><td>Core Location</td></tr>
+            <tr><td><strong>Voice</strong></td><td>AVAudioEngine + Speech Recognition</td></tr>
+            <tr><td><strong>Notifications</strong></td><td>UNUserNotificationCenter</td></tr>
+            <tr><td><strong>Networking</strong></td><td>URLSession (no third-party SDKs)</td></tr>
+            <tr><td><strong>Testing</strong></td><td>XCTest · 39 unit tests</td></tr>
+            <tr><td><strong>Minimum iOS</strong></td><td>iOS 17.0+</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Privacy -->
+    <div class="section" id="privacy">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🔒</span> Data & Privacy</h2>
+      <p>Alto is built privacy-first by design. No analytics. No third-party tracking. No ads. No data sold.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Where It Lives</th><th>Who Can See It</th></tr></thead>
+          <tbody>
+            <tr><td>Health data (HealthKit)</td><td>On-device only</td><td>You only</td></tr>
+            <tr><td>Onboarding profile</td><td>Supabase (optional)</td><td>You only — RLS enforced</td></tr>
+            <tr><td>Gemini API key</td><td>iOS UserDefaults (encrypted at rest)</td><td>You only</td></tr>
+            <tr><td>Workout logs</td><td>On-device only</td><td>You only</td></tr>
+            <tr><td>Meal photos</td><td>Sent to Gemini for analysis, not stored</td><td>You only</td></tr>
+            <tr><td>Location</td><td>On-device only, used for weather lookup</td><td>You only</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">All AI calls go directly from your device to Gemini — Alto's servers never see your data.</div>
+    </div>
+
+    <!-- Roadmap -->
+    <div class="section" id="roadmap">
+      <div class="section-divider"></div>
+      <h2><span class="h2-icon">🗺️</span> Roadmap</h2>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot done">✓</div>
+        <div><div class="roadmap-text">AI-powered daily plan generation (Gemini)</div><div class="roadmap-tag">DONE · v1.0</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot done">✓</div>
+        <div><div class="roadmap-text">Readiness scoring + smart pivoting</div><div class="roadmap-tag">DONE · v1.0</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot done">✓</div>
+        <div><div class="roadmap-text">Macro Vision — photo-based meal analysis</div><div class="roadmap-tag">DONE · v1.0</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot done">✓</div>
+        <div><div class="roadmap-text">Menstrual cycle-aware training adjustments</div><div class="roadmap-tag">DONE · v1.0</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot soon">→</div>
+        <div><div class="roadmap-text">Apple Watch companion app (readiness from wrist)</div><div class="roadmap-tag">NEXT UP</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot soon">→</div>
+        <div><div class="roadmap-text">Sleep stage integration (deep / REM / light)</div><div class="roadmap-tag">NEXT UP</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot soon">→</div>
+        <div><div class="roadmap-text">Nutrition barcode scanner</div><div class="roadmap-tag">NEXT UP</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot later">○</div>
+        <div><div class="roadmap-text">Social challenges and streak sharing</div><div class="roadmap-tag">FUTURE</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot later">○</div>
+        <div><div class="roadmap-text">Garmin / Whoop / Oura integration</div><div class="roadmap-tag">FUTURE</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot later">○</div>
+        <div><div class="roadmap-text">Android version</div><div class="roadmap-tag">FUTURE</div></div>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-dot later">○</div>
+        <div><div class="roadmap-text">Coach persona customization</div><div class="roadmap-tag">FUTURE</div></div>
+      </div>
+    </div>
+
+    <div style="text-align:center; padding: 40px 0; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border);">
+      Built with ❤️ using Swift, SwiftUI & Google Gemini · © 2026 Komal Shete
+    </div>
+
+  </main>
+</div>
+</body>
+</html>
