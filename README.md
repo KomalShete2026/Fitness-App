@@ -131,10 +131,10 @@ Pulls resting heart rate, HRV, sleep stages, and steps from HealthKit. Uses biom
 
 | Screen | Description |
 |---|---|
-| **Onboarding** | 4-step animated flow with welcome screen |
-| **Dashboard** | Daily AI plan, nutrition summary, weather, recovery status |
-| **Goals** | Multi-goal tracking with 4-phase training timelines |
-| **Profile** | Stats, body data, goals, and settings |
+| **Onboarding** | 4-step animated flow with welcome screen | file:///Users/kshete/Desktop/github_personal/Fitness-App/mockups_html/onboarding_journey_stitched.html
+| **Dashboard** | Daily AI plan, nutrition summary, weather, recovery status | file:///Users/kshete/Desktop/github_personal/Fitness-App/mockups_html/home_dashboard_updated.html
+| **Goals** | Multi-goal tracking with 4-phase training timelines | file:///Users/kshete/Desktop/github_personal/Fitness-App/mockups_html/goals_multi.html
+| **Profile** | Stats, body data, goals, and settings | file:///Users/kshete/Desktop/github_personal/Fitness-App/mockups_html/profile.html
 
 ### Onboarding Journey
 
